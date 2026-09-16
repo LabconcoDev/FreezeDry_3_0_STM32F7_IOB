@@ -1,19 +1,50 @@
+
+/*
+
+The control messages to accessory board need to be routed accordingly. 
+The request for access board parameters to be handled differently than the template below.
+Triad/FD would be same board, hence messages to be handled accordingly.
+Synchronization while parameter to be fetched from the accessory board to be designed carefully!
+
+*/
+
+
+
 #include "control_handler.h"
 #include <zephyr/logging/log.h>
 #include "serializer.h"
-
+#include "product_type.h"
 
 
 LOG_MODULE_REGISTER(control_handler, LOG_LEVEL_INF);
 
 /* External link to the transmit function */
 extern void fd_protocol_send_dma(const uint8_t *data, size_t len);
-/* Forward declaration */
+
 void pushRefrigRly(void);
+void pushVacuumRly(void);
+void pushPurgeRly(void);
+void pushShellRly(void);
+void pushRefrigDlyRly(void);
+void pushVentValve(void);
+void pushDefrostRly(void);
+void pushMiniChamberHtr(void);
+void pushShelfMstrHtr(void);
+void pushShelf1Htr(void);
+void pushShelf2Htr(void);
+void pushShelf3Htr(void);
+void pushShelf4Htr(void);
+void pushShelf5Htr(void);
+void pushLexsolPumpRly(void);
+void pushLexsolHtr(void);
+void pushRefValveRly(void);
+void pushTiltValve(void);
+
+void push5VFanDrv(void);
+
+
 void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data, size_t data_len) {
     
-    
-   
 
     switch (action) {
         case CONTROL_REFRIG_RLY:
@@ -37,11 +68,377 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
         case CONTROL_VACUUM_RLY:
-            if (data_len > 0) {
-                LOG_INF("Setting Vacuum Relay to %d", data[0]);
-                // TODO: Interface with hardware / GPIO driver here
+            if (cls==CLASS_READ)
+            {
+                
+                pushVacuumRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Vacuum Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
             }
             break;
+        case CONTROL_PURGE_RLY:
+            if (cls==CLASS_READ)
+            {
+                pushPurgeRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Purge Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_SHELL_RLY:
+            if (cls==CLASS_READ)
+            {
+                pushShellRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shell Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_REFRIG_DLY_RLY: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushRefrigDlyRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Refrig Delay Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+
+        case CONTROL_VENT_VALVE: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushVentValve(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Vent Valve to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_DEFROST_RELAY: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushDefrostRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Defrost Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_MINI_CHAMBER_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushMiniChamberHtr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Mini Chamber Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+
+        case CONTROL_SHELF_MSTR_HTR_CNTRL: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelfMstrHtr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf Master Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_SHELF1_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelf1Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf1 Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_SHELF2_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelf2Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf2 Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_SHELF3_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelf3Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf3 Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_SHELF4_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelf4Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf4 Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_SHELF5_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushShelf5Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Shelf5 Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+
+        case CONTROL_LEXSOL_PUMP_RLY: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushLexsolPumpRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Lexsol Pump Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_LEXSOL_HTR: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushLexsolHtr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Lexsol Heater to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_REF_VALVE_RLY: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushRefValveRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Refrigerator Valve Relay to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+
+        case CONTROL_TILT_VALVE: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                pushTiltValve(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting Tilt Valve to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+
+        case CONTROL_5V_FAN_DRV: // This is second stage compressor
+            if (cls==CLASS_READ)
+            {
+                push5VFanDrv(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // write parameter to EEPROM or control the hardware
+                if (data_len > 0) 
+                {
+                    LOG_INF("Setting 5V Fan Driver to %d", data[0]);
+                    // TODO: Interface with hardware / GPIO driver here
+                }
+            }
+            else
+            {
+                // Error code
+            }
+            break;
+        
 
         default:
             LOG_WRN("Unknown Control Action: 0x%02X", action);
@@ -73,6 +470,385 @@ void pushRefrigRly(void)
         fd_protocol_send_dma(tx_buf, frame_len);
         LOG_INF("Pushed Refrigeration Relay state: %d", current_state);
     } else {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+void pushVacuumRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_VACUUM_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Vacuum Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+void pushPurgeRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_PURGE_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Purge Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushShellRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELL_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shell Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushRefrigDlyRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_REFRIG_DLY_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Refrigeration Delay / Second Stage Refrig Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushVentValve(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_VENT_VALVE,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Vent Valve state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushDefrostRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_DEFROST_RELAY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Defrost Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushMiniChamberHtr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_MINI_CHAMBER_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Mini Chamber state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushShelfMstrHtr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF_MSTR_HTR_CNTRL,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf Master Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+
+void pushShelf1Htr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF1_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf 1 Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushShelf2Htr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF2_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf 2 Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+
+void pushShelf3Htr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF3_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf 3 Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+
+void pushShelf4Htr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF4_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf 4 Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushShelf5Htr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_SHELF5_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Shelf 5 Heater state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushLexsolPumpRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_LEXSOL_PUMP_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Lexsol Pump Relay state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushLexsolHtr(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_LEXSOL_HTR,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Lexsol state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushRefValveRly(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_REF_VALVE_RLY,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Reference Valve state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void pushTiltValve(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_TILT_VALVE,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed Tilt Valve state: %d", current_state);
+    } 
+    else 
+    {
+        LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+void push5VFanDrv(void)
+{
+    uint8_t current_state = 0x01; 
+    uint8_t tx_buf[32]; 
+    size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
+                                                 CLASS_PUSH,          // The reply class
+                                                 TYPE_CONTROL,        // The Type
+                                                 CONTROL_5V_FAN_DRV,  // The Action
+                                                 &current_state,      // The data we are sending back
+                                                 1);                  // Length of the data (1 byte)
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed 5v fan Driver state: %d", current_state);
+    } 
+    else 
+    {
         LOG_ERR("Failed to serialize PUSH packet");
     }
 }

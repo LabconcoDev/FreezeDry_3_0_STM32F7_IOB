@@ -27,14 +27,26 @@ typedef enum {
 } fd_type_t;
 
 typedef enum {
-    CONTROL_REFRIG_RLY      = 0x01,
-    CONTROL_VACUUM_RLY      = 0x02,
-    CONTROL_PURGE_RLY       = 0x03,
-    CONTROL_SHELL_RLY       = 0x04,
-    CONTROL_REFRIG_DLY_RLY  = 0x05,
-    CONTROL_VENT_VALVE      = 0x06,
-    CONTROL_DEFROST_RELAY   = 0x07,
-    CONTROL_MINI_CHAMBER_HTR= 0x08,
+    CONTROL_REFRIG_RLY              = 0x01,
+    CONTROL_VACUUM_RLY              = 0x02,
+    CONTROL_PURGE_RLY               = 0x03,
+    CONTROL_SHELL_RLY               = 0x04,
+    CONTROL_REFRIG_DLY_RLY          = 0x05, // this is second compressor
+    CONTROL_VENT_VALVE              = 0x06,
+    CONTROL_DEFROST_RELAY           = 0x07,
+    CONTROL_MINI_CHAMBER_HTR        = 0x08,
+    CONTROL_SHELF_MSTR_HTR_CNTRL    = 0x09,
+    CONTROL_SHELF1_HTR              = 0x0A,
+    CONTROL_SHELF2_HTR              = 0x0B,
+    CONTROL_SHELF3_HTR              = 0x0C,
+    CONTROL_SHELF4_HTR              = 0x0D,
+    CONTROL_SHELF5_HTR              = 0x0E,
+    CONTROL_LEXSOL_PUMP_RLY         = 0x0F,
+    CONTROL_LEXSOL_HTR              = 0x10,
+    CONTROL_REF_VALVE_RLY           = 0x11,
+    CONTROL_TILT_VALVE              = 0x12,
+    CONTROL_5V_FAN_DRV              = 0x13,
+
     /* Add others from ICD as needed... */
 } fd_ctrl_action_t;
 
