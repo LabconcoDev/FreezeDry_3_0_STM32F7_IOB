@@ -1,0 +1,336 @@
+
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * * Custom Board Devicetree for LCC Raspberry Pi Carrier STM32F723 Board
+ * Structured for scalability, easy maintenance, and explicit GPIO naming.
+ */
+
+/dts-v1/;
+
+#include <st/f7/stm32f7.dtsi>
+#include <st/f7/stm32f723Xe.dtsi>
+#include <st/f7/stm32f723i(c-e)kx-pinctrl.dtsi>// zephyr->modules->hal->stm32->dts
+#include <zephyr/dt-bindings/sensor/mcp9600.h>
+
+
+
+//#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+/ {
+    model = "LCC Raspberry Pi Carrier STM32F723 Board";
+    compatible = "lcc,lcc_rpi_carrier_stm32f723";
+
+    chosen {
+        // zephyr,console = &usart6;
+        // zephyr,shell-uart = &usart6;
+        zephyr,sram = &sram0;
+        zephyr,flash = &flash0;
+        // zephyr,flash-controller = &mx25r512;
+    };
+
+    /* * =========================================================================
+     * GPIO CONFIGURATIONS (LEDS, BUTTONS, & GENERAL PURPOSE IO)
+     * =========================================================================
+     */
+
+    /* Standard LED Nodes */
+    leds {
+        compatible = "gpio-leds";
+
+        gpio_pa5: led_pa5 {
+            gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+            label = "HARDWARE_LD1_PA5";
+        };
+
+        gpio_pa7: led_pa7 {
+            gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+            label = "HARDWARE_LD5_PA7";
+        };
+
+        // gpio_pb1: led_pb1 {
+        //     gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+        //     label = "HARDWARE_LD6_PB1";
+        // };
+    };
+
+    /* Input Keys / Interrupt-driven Buttons */
+    gpio_keys {
+        compatible = "gpio-keys";
+
+        gpio_pa0: button_pa0 {
+            gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+            label = "USER_BUTTON_PA0";
+            zephyr,code = <INPUT_KEY_0>;
+        };
+    };
+
+    /* * SCALABLE GPIO EXPANSION:
+     * Use this block to map miscellaneous digital inputs/outputs on your board.
+     * Binding to "gpio-leds" lets you manipulate them easily in C code using:
+     * gpio_pin_configure_dt() / gpio_pin_set_dt()
+     */
+    custom_gpios {
+        compatible = "gpio-leds";
+
+        /* Template: Duplicate and modify these blocks as your board needs grow */
+
+        l0_reset_pin: l0_reset_pin {
+            gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+            label = "L0_NRST_GPIO";
+        };
+
+		gpio_pb1: io_pb1 {
+            gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+            label = "EXPANSION_IO_PB1";
+        };
+
+		gpio_pd13: io_pd13 {
+            gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+            label = "EXPANSION_IO_PD13";
+        };
+
+
+        gpio_pc1: io_pc1 {
+            gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+            label = "EXPANSION_IO_PC1";
+        };
+
+        gpio_pc2: io_pc2 {
+            gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+            label = "EXPANSION_IO_PC2";
+        };
+
+        gpio_pd0: io_pd0 {
+            gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+            label = "EXPANSION_IO_PD0";
+        };
+    };
+
+
+  
+    /* Application-friendly aliases for your main application logic loop */
+    aliases {
+        l0-reset = &l0_reset_pin;
+        led0 = &gpio_pa5;
+        led1 = &gpio_pa7;
+        // led2 = &gpio_pb1;
+        sw0  = &gpio_pa0;
+        /* Custom io aliases can be mapped here as well (e.g., test-point = &gpio_pc1;) */
+        /* ADD THESE TWO LINES FOR YOUR TASKS */
+        vacuum-gpio = &gpio_pd13;    /* Points to io_pd13 (Pin D13) */
+        collector-gpio = &gpio_pb1; /* Points to io_pb1 (Pin B1) */
+
+    };
+};
+
+/* * =========================================================================
+ * CLOCK & SYSTEM SYSTEM CONFIGURATION
+ * =========================================================================
+ */
+
+&clk_hse {
+    clock-frequency = <DT_FREQ_M(25)>;
+    status = "disabled"; /* Change to "okay" if utilizing an external crystal oscillator */
+};
+
+&clk_hsi {
+    status = "okay";
+};
+
+&pll {
+    div-m = <8>;
+    mul-n = <216>;
+    div-p = <2>;
+    div-q = <9>;
+    clocks = <&clk_hsi>;
+    status = "okay";
+};
+
+&rcc {
+    clocks = <&pll>;
+    clock-frequency = <DT_FREQ_M(216)>;
+    ahb-prescaler = <1>;
+    apb1-prescaler = <4>;
+    apb2-prescaler = <2>;
+};
+
+/* * =========================================================================
+ * COMMUNICATION PROTOCOLS (UARTS, I2C, SPI)
+ * =========================================================================
+ */
+
+
+/* =========================================================================
+ * CUSTOM TERMINAL DISPLAY CONFIGURATION (UART7 + DMA1)
+ * ========================================================================= */
+
+
+&uart7 {
+    /* PE7 is RX, PE8 is TX using alternative function mappings */
+    pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+    pinctrl-names = "default";
+    current-speed = <9600>;
+    status = "okay";
+
+    /* FIXED: Raw hex values explicitly resolve the parsing shift */
+    dmas = <&dma1 1 5 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH) 0>,  /* Stream 1, Channel 5 (TX Channel) */
+           <&dma1 3 5 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) 0>;  /* Stream 3, Channel 5 (RX Channel) */
+
+    //single-wire;       
+    dma-names = "tx", "rx";
+};
+
+
+
+
+&dma1 {
+    status = "okay";
+};
+
+
+
+/* Auxiliary Communication Channel / Modbus / External Peripherals */
+&usart2 {
+    pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+    pinctrl-names = "default";
+    current-speed = <115200>;
+    status = "okay";
+};
+
+
+/* I2C Bus 1 - e.g., Onboard EEPROM or Sensors */
+
+
+/* I2C Bus 1 - Dedicated to MCP9604 Thermocouple Converter */
+&i2c1 {
+    pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>; 
+    pinctrl-names = "default";
+    clock-frequency = <I2C_BITRATE_STANDARD>; 
+    status = "okay";
+
+    /* Declare the single physical chip address */
+    mcp9604_ic: mcp9604@60 {
+        compatible = "microchip,mcp9604";
+        reg = <0x60>;
+        status = "okay";
+    };
+};
+
+
+
+/* I2C Bus 2 - e.g., Display or Real-Time Clock */
+&i2c2 {
+    pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
+    pinctrl-names = "default";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    status = "okay";
+};
+
+/* I2C Bus 3 - Expansion Header */
+&i2c3 {
+    pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_ph8>;
+    pinctrl-names = "default";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    status = "okay";
+};
+
+
+&spi4 {
+    pinctrl-0 = <&spi4_sck_pe12 &spi4_miso_pe13 &spi4_mosi_pe14>;
+    pinctrl-names = "default";
+    status = "okay";
+    
+    /* Define the CS pin here for the bus controller */
+    cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>,
+               <&gpioe 9 GPIO_ACTIVE_LOW>;
+    
+
+    /* Existing ADS124S08 using CS index 0 */
+    ads124s08@0 {
+        compatible = "ti,ads124s08";
+        reg = <0>; /* Maps to cs-gpios index 0 */
+        spi-max-frequency = <1000000>;
+        spi-cpha; 
+        #io-channel-cells = <1>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        idac-current = <500>;
+        drdy-gpios = <&gpioc 8 GPIO_ACTIVE_LOW>; 
+        reset-gpios = <&gpiob 15 GPIO_ACTIVE_LOW>;
+
+        channel@0 {
+            reg = <0>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+            zephyr,input-positive = <1>; 
+            zephyr,input-negative = <0>;
+        };
+    };
+
+
+    ltc2983: ltc2983@1 {
+        compatible = "adi,ltc2983";
+        reg = <1>;
+
+        spi-max-frequency = <1000000>;
+
+        spi-cpha;
+
+        duplex = <0>;
+        frame-format = <0>;
+        spi-interframe-delay-ns = <0>;
+
+        status = "okay";
+    };
+
+};
+
+
+/* SPI Bus 1 - High-speed peripheral bus */
+&spi1 {
+    pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pb4 &spi1_mosi_pb5>;
+    pinctrl-names = "default";
+    status = "okay";
+    
+    /* * Define custom GPIO Chip Selects here to use Zephyr's automated CS management.
+     * Example: cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+     */
+};
+
+/* * =========================================================================
+ * EXTERNAL STORAGE & HIGH-SPEED FLASH (QSPI)
+ * =========================================================================
+ */
+// &quadspi {
+//     pinctrl-names = "default";
+//     pinctrl-0 = <&quadspi_clk_pb2    &quadspi_bk1_ncs_pb6
+//                  &quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
+//                  &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+//     flash-id = <1>;
+//     status = "okay";
+
+//     mx25r512: qspi-nor-flash@0 {
+//         compatible = "st,stm32-qspi-nor";
+//         reg = <0>;
+//         size = <DT_SIZE_M(512)>; /* 512 Mbits (64 Megabytes) */
+//         qspi-max-frequency = <8000000>;
+//         cs-high-time = <3>; /* >= 30 ns */
+//         spi-bus-width = <4>;
+//         writeoc = "PP_1_4_4";
+//         status = "okay";
+//     };
+// };
+
+/* * =========================================================================
+ * USB DEVICE CONFIGURATION
+ * =========================================================================
+ */
+zephyr_udc0: &usbotg_fs {
+    pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+    pinctrl-names = "default";
+    status = "okay";
+};

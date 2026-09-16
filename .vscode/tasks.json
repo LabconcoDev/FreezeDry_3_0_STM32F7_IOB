@@ -1,0 +1,54 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build (Incremental)",
+      "type": "shell",
+      "command": "west",
+      "args": [
+        "build",
+        "-b",
+        "lcc_rpi_carrier_stm32f723",
+        "-d",
+        "${workspaceFolder}/my-app/build",
+        "${workspaceFolder}/my-app"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/zephyr_workspace"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build (Clean)",
+      "type": "shell",
+      "command": "west",
+      "args": [
+        "build",
+        "-p",
+        "always",
+        "-b",
+        "lcc_rpi_carrier_stm32f723",
+        "-d",
+        "${workspaceFolder}/my-app/build",
+        "${workspaceFolder}/my-app"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/zephyr_workspace"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

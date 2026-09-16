@@ -1,0 +1,7 @@
+This file will contain all the hardware configuration and fucntioanlity once the board design is finalized
+
+Port/Pin Name---------------Functionality----------------RpiBoard (To be replaced with IOB FD 3.0 board)
+------------------------------------------------------------------
+------------------------------------------------------------------
+PG9--------------------------USART6 RX---------------------uC_IO39
+PG14-------------------------USART6 TX---------------------uC_IO40

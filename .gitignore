@@ -1,0 +1,35 @@
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Zephyr Workspace & Build Artifacts
+zephyr_workspace/
+my-app/build/
+build/
+
+# Compiled firmware files (just in case they leak out)
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+
+# Python virtual environments
+.venv/
+env/
+venv/
+
+# VS Code IDE caches (but keep settings)
+.vscode/.cache/
+.vscode/ipch/
+*.code-workspace
+
+# C/C++ tools
+compile_commands.json
+.clangd/
+.cache/

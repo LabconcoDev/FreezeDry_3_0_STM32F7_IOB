@@ -1,0 +1,37 @@
+{
+    "name": "Zephyr RTOS LTS Development",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "cmake.sourceDirectory": "${workspaceFolder}/my-app",
+                "cortex-debug.gdbPath": "/opt/toolchains/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+                "cortex-debug.armToolchainPath": "/opt/toolchains/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin",
+                "C_Cpp.errorSquiggles": "disabled",
+                "terminal.integrated.stickyScroll.enabled": false
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools",
+                "trond-snekvik.devicetree",
+                "marus25.cortex-debug",
+                "mcu-debug.debug-tracker-vscode"
+            ]
+        }
+    },
+    // USB pass through is dedicated for Ubuntu Host Machines. Windows Users run GDB server on the host.
+    "runArgs": [
+        "--privileged",
+        "-v", "/dev/bus/usb:/dev/bus/usb"
+    ],
+    "remoteUser": "user",
+
+    // Automatically initializes the workspace inside the local 'workspace' folder
+    //"postCreateCommand": "if [ ! -d 'workspace/zephyr' ]; then cd workspace && west init -m https://github.com/zephyrproject-rtos/zephyr --mr v4.4.0 . && west update; fi"
+    // AUTOMATED: Runs your dedicated setup script instantly when the container layer spins up
+    "postCreateCommand": "sh .devcontainer/init-workspace.sh"
+}

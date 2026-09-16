@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Zephyr STM32F723 (J-Link external on host)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "external",
+            "gdbTarget": "host.docker.internal:2331",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/my-app/build/zephyr/zephyr.elf",
+            "runToEntryPoint": "main",
+            "rtos": "Zephyr",
+            "showDevDebugOutput": "both",
+            
+            "postAttachCommands": [
+                "set mem inaccessible-by-default off",
+                "monitor reset",
+                "load",
+                "monitor reset halt"
+            ],
+            "postLaunchCommands": [
+                "set mem inaccessible-by-default off",
+                "monitor reset",
+                "load",
+                "monitor reset halt"
+            ]
+        }
+    ]
+}

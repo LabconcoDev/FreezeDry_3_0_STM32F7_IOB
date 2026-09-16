@@ -1,0 +1,6 @@
+board:
+  name: lcc_rpi_carrier_stm32f723
+  full_name: LCC Raspberry Pi Carrier STM32F723
+  vendor: lcc
+  socs:
+    - name: stm32f723xx
