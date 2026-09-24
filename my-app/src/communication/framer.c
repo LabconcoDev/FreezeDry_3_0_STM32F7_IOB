@@ -76,31 +76,3 @@ void fd_framer_feed_bytes(fd_framer_t *framer, const uint8_t *data, size_t len)
     }
 }
 
-// size_t fd_framer_serialize(uint8_t *out, size_t max_len,
-//                            fd_class_t cls, fd_type_t type, uint8_t action,
-//                            const uint8_t *data, uint8_t data_len)
-// {
-//     uint8_t payload_len = 3 + data_len;
-//     size_t total = FD_OVERHEAD_SIZE + payload_len;
-
-//     if (total > max_len) {
-//         return 0;
-//     }
-
-//     out[0] = FD_SOF_L;
-//     out[1] = FD_SOF_C;
-//     out[2] = payload_len;
-//     out[3] = (uint8_t)cls;
-//     out[4] = (uint8_t)type;
-//     out[5] = action;
-
-//     if (data && data_len > 0) {
-//         memcpy(&out[6], data, data_len);
-//     }
-
-//     uint16_t csum = calc_checksum(payload_len, &out[3]);
-//     out[3 + payload_len] = (uint8_t)(csum & 0xFF);
-//     out[4 + payload_len] = (uint8_t)((csum >> 8) & 0xFF);
-
-//     return total;
-// }

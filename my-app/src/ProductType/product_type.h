@@ -13,17 +13,16 @@
 uint8_t FindProductType(void);
 uint8_t FindAccessoryType(void);
 
-typedef enum {
-    IAM_FD  = 0x01
-} product_type;
+typedef enum
+{
+    IAM_UNKNOWN = 0x0E,
 
+    IAM_FD      = 0x01,
+    IAM_TRIAD   = 0x02,
+    IAM_BT      = 0x03,
+    IAM_ST      = 0x04
 
-typedef enum {
-    IAM_BT       = 0x01,
-    IAM_MBT      = 0x02,
-    IAM_HPS      = 0x03,
-    IAM_ST       = 0x04,
-    IAM_TRIAD    = 0x05,
-} accessory_type;
+} product_id_t;
+
 
 #endif /* PRODUCT_TYPE_H */

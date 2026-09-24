@@ -4,6 +4,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(stm32f723_app)
 
 # ==========================================
+# Force CMake Re-run
+# ==========================================
 # 1. Automate .c files (Sources)
 # ==========================================
 file(GLOB_RECURSE APP_SOURCES 

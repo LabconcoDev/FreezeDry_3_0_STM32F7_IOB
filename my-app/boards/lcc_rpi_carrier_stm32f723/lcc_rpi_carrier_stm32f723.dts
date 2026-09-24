@@ -161,6 +161,24 @@
  * =========================================================================
  */
 
+/* =========================================================================
+ * UART4 + DMA ::::::::::::Accessory IOB:::::::
+ * ========================================================================= */
+
+&uart4 {
+    /* PC10 is TX, PC11 is RX using alternative function mappings */
+    pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
+    pinctrl-names = "default";
+    current-speed = <115200>; /* Adjust to match accessory IOB */
+    status = "okay";
+
+    /* DMA mapping for STM32F7 UART4 */
+    dmas = <&dma1 4 4 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH) 0>,  /* Stream 4, Channel 4 (TX) */
+           <&dma1 2 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) 0>;  /* Stream 2, Channel 4 (RX) */
+    
+    dma-names = "tx", "rx";
+};
+
 
 /* =========================================================================
  * CUSTOM TERMINAL DISPLAY CONFIGURATION (UART7 + DMA1)

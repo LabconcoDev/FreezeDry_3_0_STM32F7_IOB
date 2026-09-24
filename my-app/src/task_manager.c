@@ -2,6 +2,7 @@
 #include <zephyr/logging/log.h>
 #include "task_manager.h"
 #include "task_ads124s08.h"
+#include "task_telemetry.h"
 #include <string.h>
 LOG_MODULE_REGISTER(task_manager, LOG_LEVEL_INF);
 
@@ -14,12 +15,14 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3);
  * ========================================================= */
 #define TASK_STACK_SIZE_1024 1024
 
-K_THREAD_DEFINE(vacuum_tid,    TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 6, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(collector_tid, TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 7, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(smf_tid,       TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 5, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(test5_tid,     TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 3, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(dma_tx_tid,    TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(ads_tid,       TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(vacuum_tid,             TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 6, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(collector_tid,          TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 7, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(smf_tid,                TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 5, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(test5_tid,              TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 3, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(dma_tx_tid,             TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(ads_tid,                TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(acc_uart_tid,           TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(display_telemetry_tid,  TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
 
 
 /* =========================================================
@@ -81,7 +84,26 @@ static struct app_task task_table[] = {
         .handler     = ads_task_run,
         .interval_ms = 1000,
         .thread_id   = ads_tid,
-    }
+    },
+        
+    {
+        .name        = "Task7: DMA UART Accessory",
+        .init        = dma_uart_accessory_iob_init,   
+        .handler     = dma_uart_accessory_iob_run,    
+        .interval_ms = 1000,
+        .thread_id   = acc_uart_tid,
+    },
+        
+    {
+        .name        = "Task8: UART Telemetry Stream",
+        .init        = telemetry_task_init,
+        .handler     = telemetry_task_run,
+        .interval_ms = 1000,
+        .thread_id   = display_telemetry_tid,
+    },
+
+
+
 
 };
 

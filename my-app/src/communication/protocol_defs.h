@@ -50,6 +50,55 @@ typedef enum {
     /* Add others from ICD as needed... */
 } fd_ctrl_action_t;
 
+
+typedef enum {
+    SYSTEM_VERSION              = 0x01,
+    SYSTEM_MODEL_DETAILS        = 0x02,
+    SYSTEM_DEBUG_LOGS           = 0x03,
+    SYSTEM_DATE                 = 0x04,
+    SYSTEM_TIME                 = 0x05,
+    SYSTEM_IAM_ALIVE            = 0x06,
+    SYSTEM_IAM_DONE             = 0x07,
+    SYSTEM_PING                 = 0x08,
+    SYSTEM_TERMINAL             = 0x09,
+    SYSTEM_PRODUCT_TYPE         = 0x0A,
+    /* Add others from ICD as needed... */
+} fd_system_action_t;
+
+
+
+typedef enum {
+    SENSOR_COLLECTOR_TEMP                = 0x01,
+    SENSOR_MINI_CHAMBER_TEMP             = 0x02,
+    SENSOR_SYSTEM_VAC                    = 0x03,
+    SENSOR_SAMPLE_VAC1                   = 0x04,
+    SENSOR_SAMPLE_VAC2                   = 0x05, 
+    SENSOR_SAMPLE_VAC3                   = 0x06,
+    SENSOR_SAMPLE_VAC4                   = 0x07,
+    SENSOR_SAMPLE_VAC5                   = 0x08,
+    SENSOR_SAMPLE_VAC6                   = 0x09,
+    SENSOR_MOISTURE                      = 0x0A,
+    SENSOR_SHELL_TEMP_SENSOR             = 0x0B,
+    SENSOR_SHELF1_TEMP                   = 0x0C,
+    SENSOR_SHELF2_TEMP                   = 0x0D,
+    SENSOR_SHELF3_TEMP                   = 0x0E,
+    SENSOR_SHELF4_TEMP                   = 0x0F,
+    SENSOR_SHELF5_TEMP                   = 0x10,
+    SENSOR_SAMPLE1_TEMP                  = 0x11,
+    SENSOR_SAMPLE2_TEMP                  = 0x12,
+    SENSOR_SAMPLE3_TEMP                  = 0x13,
+    SENSOR_SAMPLE4_TEMP                  = 0x14,
+    SENSOR_SAMPLE5_TEMP                  = 0x15,
+    SENSOR_DOOR_SW                       = 0x16,
+    SENSOR_TILT_SW                       = 0x17,
+    SENSOR_SHELL_DRY_LEXSOL              = 0x18,
+    
+    /* Add others from ICD as needed... */
+} fd_sensor_action_t;
+
+
+
+
 /* Standard Payload Structure */
 typedef struct __attribute__((packed)) {
     uint8_t cls;     /* fd_class_t */

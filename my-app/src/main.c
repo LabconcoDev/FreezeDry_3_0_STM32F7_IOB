@@ -2,6 +2,7 @@
 #include <zephyr/logging/log.h>
 #include "task_manager.h"
 #include "producttype/product_type.h"
+#include "accessory_iob_data.h"
 LOG_MODULE_REGISTER(main_app, LOG_LEVEL_INF);
 
 

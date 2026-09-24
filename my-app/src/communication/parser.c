@@ -1,5 +1,7 @@
 #include "parser.h"
 #include "control_handler.h"
+#include "sensor_handler.h"
+#include "system_handler.h"
 #include <zephyr/logging/log.h>
 #include "serializer.h"
 
@@ -10,9 +12,11 @@ LOG_MODULE_REGISTER(protocol_parser, LOG_LEVEL_INF);
 
 /* External link to the transmit function in task_dma_uart_display.c */
 extern void fd_protocol_send_dma(const uint8_t *data, size_t len);
+extern void fd_protocol_send_accessory_iob_dma(const uint8_t *data, size_t len);
 
 
-void fd_parser_process_packet(const fd_packet_t *pkt) {
+void fd_parser_process_packet(fd_interface_t source_if, const fd_packet_t *pkt) 
+{
     if (pkt == NULL || pkt->payload == NULL || pkt->len < 3) {
         return; // Invalid payload
     }
@@ -37,10 +41,24 @@ void fd_parser_process_packet(const fd_packet_t *pkt) {
                                                      data_len);
         
         /* If serialization succeeded, send it via DMA */
-        if (frame_len > 0) {
-            fd_protocol_send_dma(tx_buf, frame_len);
-            LOG_INF("Auto-ACK sent for Type: 0x%02X, Action: 0x%02X", payload->type, payload->action);
-        } else {
+        if (frame_len > 0) 
+        {
+
+
+
+            if (source_if == INTERFACE_APP) 
+            {
+                fd_protocol_send_dma(tx_buf, frame_len);
+                LOG_INF("To Display Auto-ACK sent for Type: 0x%02X, Action: 0x%02X", payload->type, payload->action);
+            }
+            else 
+            {
+                fd_protocol_send_accessory_iob_dma(tx_buf, frame_len);
+                LOG_INF("To Accesssory IOB Auto-ACK sent for Type: 0x%02X, Action: 0x%02X", payload->type, payload->action);
+            }
+        } 
+        else 
+        {
             LOG_ERR("Failed to serialize Auto-ACK (buffer too small)");
         }
     }
@@ -54,8 +72,14 @@ void fd_parser_process_packet(const fd_packet_t *pkt) {
             
 
         case TYPE_SENSORS:
+            fd_sensor_handler_process(payload->cls, payload->action, payload->data, data_len);
+            break;
         case TYPE_ALERT:
         case TYPE_SYSTEM:
+            fd_system_handler_process(payload->cls, payload->action, payload->data, data_len);
+            break;
+            
+
         case TYPE_SETTINGS:
         case TYPE_DIAGNOSTIC:
             // TODO: Implement handlers for other types later

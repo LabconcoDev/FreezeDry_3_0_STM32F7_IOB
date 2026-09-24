@@ -149,7 +149,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
 
 
 
-        case CONTROL_VENT_VALVE: // This is second stage compressor
+        case CONTROL_VENT_VALVE: 
             if (cls==CLASS_READ)
             {
                 pushVentValve(); // need to pass port as a parameter
@@ -170,7 +170,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_DEFROST_RELAY: // This is second stage compressor
+        case CONTROL_DEFROST_RELAY: 
             if (cls==CLASS_READ)
             {
                 pushDefrostRly(); // need to pass port as a parameter
@@ -191,7 +191,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_MINI_CHAMBER_HTR: // This is second stage compressor
+        case CONTROL_MINI_CHAMBER_HTR: 
             if (cls==CLASS_READ)
             {
                 pushMiniChamberHtr(); // need to pass port as a parameter
@@ -213,7 +213,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
 
 
 
-        case CONTROL_SHELF_MSTR_HTR_CNTRL: // This is second stage compressor
+        case CONTROL_SHELF_MSTR_HTR_CNTRL: 
             if (cls==CLASS_READ)
             {
                 pushShelfMstrHtr(); // need to pass port as a parameter
@@ -233,7 +233,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             }
             break;
 
-        case CONTROL_SHELF1_HTR: // This is second stage compressor
+        case CONTROL_SHELF1_HTR: 
             if (cls==CLASS_READ)
             {
                 pushShelf1Htr(); // need to pass port as a parameter
@@ -253,7 +253,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             }
             break;
 
-        case CONTROL_SHELF2_HTR: // This is second stage compressor
+        case CONTROL_SHELF2_HTR: 
             if (cls==CLASS_READ)
             {
                 pushShelf2Htr(); // need to pass port as a parameter
@@ -273,7 +273,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             }
             break;
 
-        case CONTROL_SHELF3_HTR: // This is second stage compressor
+        case CONTROL_SHELF3_HTR: 
             if (cls==CLASS_READ)
             {
                 pushShelf3Htr(); // need to pass port as a parameter
@@ -293,7 +293,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             }
             break;
 
-        case CONTROL_SHELF4_HTR: // This is second stage compressor
+        case CONTROL_SHELF4_HTR: 
             if (cls==CLASS_READ)
             {
                 pushShelf4Htr(); // need to pass port as a parameter
@@ -314,7 +314,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_SHELF5_HTR: // This is second stage compressor
+        case CONTROL_SHELF5_HTR: 
             if (cls==CLASS_READ)
             {
                 pushShelf5Htr(); // need to pass port as a parameter
@@ -336,7 +336,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
 
 
 
-        case CONTROL_LEXSOL_PUMP_RLY: // This is second stage compressor
+        case CONTROL_LEXSOL_PUMP_RLY: 
             if (cls==CLASS_READ)
             {
                 pushLexsolPumpRly(); // need to pass port as a parameter
@@ -357,7 +357,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_LEXSOL_HTR: // This is second stage compressor
+        case CONTROL_LEXSOL_HTR: 
             if (cls==CLASS_READ)
             {
                 pushLexsolHtr(); // need to pass port as a parameter
@@ -378,7 +378,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_REF_VALVE_RLY: // This is second stage compressor
+        case CONTROL_REF_VALVE_RLY: 
             if (cls==CLASS_READ)
             {
                 pushRefValveRly(); // need to pass port as a parameter
@@ -399,7 +399,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_TILT_VALVE: // This is second stage compressor
+        case CONTROL_TILT_VALVE: 
             if (cls==CLASS_READ)
             {
                 pushTiltValve(); // need to pass port as a parameter
@@ -419,7 +419,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             }
             break;
 
-        case CONTROL_5V_FAN_DRV: // This is second stage compressor
+        case CONTROL_5V_FAN_DRV: 
             if (cls==CLASS_READ)
             {
                 push5VFanDrv(); // need to pass port as a parameter

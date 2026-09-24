@@ -38,7 +38,7 @@ static fd_framer_t framer;
 static void on_valid_packet_received(const fd_packet_t *pkt)
 {
     LOG_DBG("Valid packet framed. Routing to parser...");
-    fd_parser_process_packet(pkt);
+    fd_parser_process_packet(INTERFACE_APP, pkt);
 }
 
 /* Async UART Callback to catch DMA events */
