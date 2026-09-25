@@ -24,12 +24,26 @@ static uint8_t rx_buf_2[RX_BUF_SIZE] __aligned(32) __nocache;
 static uint8_t *next_rx_buf = rx_buf_2;
 static bool rx_active = false;
 
+
+
+
+struct tx_chunk_msg {
+    uint8_t data[128];
+    size_t len;
+};
+
+
+
 /* Queue to pass received chunks from ISR context to thread context */
 struct rx_chunk_msg {
     uint8_t data[RX_BUF_SIZE];
     size_t len;
 };
 K_MSGQ_DEFINE(rx_msgq, sizeof(struct rx_chunk_msg), 10, 4);
+/* Queue to hold up to 10 messages waiting in line */
+K_MSGQ_DEFINE(tx_msgq, sizeof(struct tx_chunk_msg), 10, 4);
+// semaphore to handle transmission
+K_SEM_DEFINE(tx_hardware_free_sem, 1, 1);
 
 /* The global framer instance */
 static fd_framer_t framer;
@@ -47,8 +61,7 @@ static void dma_display_callback(const struct device *dev, struct uart_event *ev
     int ret;
     switch (evt->type) {
     case UART_TX_DONE:
-        LOG_INF("Display DMA transaction finished. Transmitted %zu bytes.", evt->data.tx.len);
-        atomic_clear(&tx_busy);
+        k_sem_give(&tx_hardware_free_sem);
         break;
 
     case UART_TX_ABORTED:
@@ -162,39 +175,38 @@ void dma_uart_display_run(void)
         fd_framer_feed_bytes(&framer, msg.data, msg.len);
     }
 
-    // Note: If you implement a main thread while(1) loop elsewhere that calls
-    // this run function repeatedly, leave K_FOREVER. If this is a cooperative
-    // thread that handles other duties in the same loop, use K_NO_WAIT.
+    
 }
 
 
+void dma_uart_tx_thread(void)
+{
+    struct tx_chunk_msg msg;
+
+    while (1) 
+    {
+        k_msgq_get(&tx_msgq, &msg, K_FOREVER);
+        k_sem_take(&tx_hardware_free_sem, K_FOREVER);
+        uart_tx(uart_dev, msg.data, msg.len, SYS_FOREVER_US);
+    }
+}
 
 /* Function to transmit a protocol frame over UART DMA */
 void fd_protocol_send_dma(const uint8_t *data, size_t len)
 {
-    /* Wait if a transmission is already in progress */
-    if (atomic_get(&tx_busy) != 0) {
-        LOG_WRN("TX busy, dropping packet!");
+    struct tx_chunk_msg msg;
+
+    if (len > sizeof(msg.data))
+    {
+        LOG_ERR("Message too large for TX queue!");
         return;
     }
 
-    /* Ensure we don't overflow our TX buffer */
-    if (len > sizeof(display_tx_buffer)) {
-        LOG_ERR("Frame too large for TX buffer!");
-        return;
-    }
-
-    /* Copy to the non-cached DMA buffer */
-    memcpy(display_tx_buffer, data, len);
-    
-    /* Flush D-cache to physical RAM before triggering DMA (required for Zephyr on STM32F7) */
-    sys_cache_data_flush_range(display_tx_buffer, len);
-
-    atomic_set(&tx_busy, 1);
-
-    int ret = uart_tx(uart_dev, display_tx_buffer, len, SYS_FOREVER_US);
-    if (ret < 0) {
-        LOG_ERR("Failed to initiate DMA TX: %d", ret);
-        atomic_clear(&tx_busy);
+    msg.len = len;
+    memcpy(msg.data, data, len);
+    /* Put it in the queue! */
+    if (k_msgq_put(&tx_msgq, &msg, K_NO_WAIT) != 0) 
+    {
+        LOG_ERR("TX Queue is totally full! Dropping packet.");
     }
 }

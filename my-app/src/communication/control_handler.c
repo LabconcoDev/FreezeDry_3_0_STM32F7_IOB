@@ -9,7 +9,8 @@ Synchronization while parameter to be fetched from the accessory board to be des
 */
 
 
-
+#include "control_accessory_handler.h"
+#include "control_hardware_handler.h"
 #include "control_handler.h"
 #include <zephyr/logging/log.h>
 #include "serializer.h"
@@ -47,125 +48,52 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
     
 
     switch (action) {
-        case CONTROL_REFRIG_RLY:
-            if (cls==CLASS_READ)
+
+        /* -------------------------------------------------------- */
+        /* CATEGORY 1: BASE UNIT ACTIONS (Local GPIO Only)                      */
+        /* -------------------------------------------------------- */
+        case CONTROL_VACUUM_RLY:
+            if (cls == CLASS_READ) 
             {
-                pushRefrigRly(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
+                pushVacuumRly(); 
+            } 
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Refrigeration Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
-        case CONTROL_VACUUM_RLY:
-            if (cls==CLASS_READ)
-            {
-                
-                pushVacuumRly(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Vacuum Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
         case CONTROL_PURGE_RLY:
             if (cls==CLASS_READ)
             {
                 pushPurgeRly(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Purge Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
-        case CONTROL_SHELL_RLY:
-            if (cls==CLASS_READ)
-            {
-                pushShellRly(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shell Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
 
         case CONTROL_REFRIG_DLY_RLY: // This is second stage compressor
             if (cls==CLASS_READ)
             {
                 pushRefrigDlyRly(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Refrig Delay Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
-
-
 
         case CONTROL_VENT_VALVE: 
             if (cls==CLASS_READ)
             {
                 pushVentValve(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Vent Valve to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
@@ -175,18 +103,9 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             {
                 pushDefrostRly(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Defrost Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
@@ -196,205 +115,20 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             {
                 pushMiniChamberHtr(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Mini Chamber Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
-
-
-
-        case CONTROL_SHELF_MSTR_HTR_CNTRL: 
-            if (cls==CLASS_READ)
-            {
-                pushShelfMstrHtr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf Master Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-        case CONTROL_SHELF1_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushShelf1Htr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf1 Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-        case CONTROL_SHELF2_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushShelf2Htr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf2 Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-        case CONTROL_SHELF3_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushShelf3Htr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf3 Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-        case CONTROL_SHELF4_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushShelf4Htr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf4 Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-
-        case CONTROL_SHELF5_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushShelf5Htr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Shelf5 Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-
-
-        case CONTROL_LEXSOL_PUMP_RLY: 
-            if (cls==CLASS_READ)
-            {
-                pushLexsolPumpRly(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Lexsol Pump Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
-
-        case CONTROL_LEXSOL_HTR: 
-            if (cls==CLASS_READ)
-            {
-                pushLexsolHtr(); // need to pass port as a parameter
-            }
-            else if (cls == CLASS_WRITE)
-            {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Lexsol Heater to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
-            }
-            break;
-
 
         case CONTROL_REF_VALVE_RLY: 
             if (cls==CLASS_READ)
             {
                 pushRefValveRly(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Refrigerator Valve Relay to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
@@ -404,18 +138,9 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             {
                 pushTiltValve(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting Tilt Valve to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
 
@@ -424,21 +149,130 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             {
                 push5VFanDrv(); // need to pass port as a parameter
             }
-            else if (cls == CLASS_WRITE)
+            else if (cls == CLASS_WRITE) 
             {
-                // write parameter to EEPROM or control the hardware
-                if (data_len > 0) 
-                {
-                    LOG_INF("Setting 5V Fan Driver to %d", data[0]);
-                    // TODO: Interface with hardware / GPIO driver here
-                }
-            }
-            else
-            {
-                // Error code
+                ControlHardware_Handler(action, data);
             }
             break;
+          
         
+
+        /* ======================================================== */
+        /* CATEGORY 2: PURELY ACCESSORY ACTIONS (No ID checks needed!)  */
+        /* ======================================================== */
+
+        case CONTROL_SHELF_MSTR_HTR_CNTRL: 
+            if (cls==CLASS_READ)
+            {
+                pushShelfMstrHtr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+        case CONTROL_SHELF1_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushShelf1Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+        case CONTROL_SHELF2_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushShelf2Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+        case CONTROL_SHELF3_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushShelf3Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+        case CONTROL_SHELF4_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushShelf4Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+
+        case CONTROL_SHELF5_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushShelf5Htr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE) 
+            {
+                accessory_control_handler_process(action, data, data_len);
+            }
+            break;
+
+        
+
+
+        /* ======================================================== */
+        /* CATEGORY 3: SHARED ACTIONS (Local AND Accessory)         */
+        /* ======================================================== */
+
+        case CONTROL_REFRIG_RLY:
+            if (cls==CLASS_READ)
+            {              
+                pushRefrigRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                // 1. Tell accessory what to do
+                accessory_control_handler_process(action, data, data_len);
+                // 2. control action on main IOB
+                ControlHardware_Handler(action, data);
+            }
+            
+            break;
+        
+        case CONTROL_LEXSOL_PUMP_RLY: 
+            if (cls==CLASS_READ)
+            {
+                pushLexsolPumpRly(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                accessory_control_handler_process(action, data, data_len);
+                ControlHardware_Handler(action, data);
+            }
+            break;
+
+        case CONTROL_LEXSOL_HTR: 
+            if (cls==CLASS_READ)
+            {
+                pushLexsolHtr(); // need to pass port as a parameter
+            }
+            else if (cls == CLASS_WRITE)
+            {
+                accessory_control_handler_process(action, data, data_len);
+                ControlHardware_Handler(action, data);
+            }
+            break;
 
         default:
             LOG_WRN("Unknown Control Action: 0x%02X", action);

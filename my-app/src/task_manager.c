@@ -66,7 +66,7 @@ static struct app_task task_table[] = {
         .name        = "Task4: DMA UART Display",
         .init        = dma_uart_display_init,   
         .handler     = dma_uart_display_run,    
-        .interval_ms = 1000,                    // Runs every 1000ms
+        .interval_ms = 0,                           // This is an event or interrupt driven task
         .thread_id   = dma_tx_tid,
     },
 
@@ -90,7 +90,7 @@ static struct app_task task_table[] = {
         .name        = "Task7: DMA UART Accessory",
         .init        = dma_uart_accessory_iob_init,   
         .handler     = dma_uart_accessory_iob_run,    
-        .interval_ms = 1000,
+        .interval_ms = 0,                           // This is an event or interrupt driven task
         .thread_id   = acc_uart_tid,
     },
         

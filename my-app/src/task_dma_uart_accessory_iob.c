@@ -172,9 +172,7 @@ void dma_uart_accessory_iob_run(void)
         fd_framer_feed_bytes(&framer, msg.data, msg.len);
     }
 
-    // Note: If you implement a main thread while(1) loop elsewhere that calls
-    // this run function repeatedly, leave K_FOREVER. If this is a cooperative
-    // thread that handles other duties in the same loop, use K_NO_WAIT.
+    
 }
 
 
