@@ -79,7 +79,7 @@ void ControlHardware_Handler(uint8_t action, const uint8_t *data)
             // set_shell_relay(target_state);
             break;
 
-        case CONTROL_REFRIG_DLY_RLY:
+        case CONTROL_SECOND_STAGE_REFRIG_RLY  :
             LOG_INF("Hardware: Refrigeration Delay Relay set to %d", target_state);
             // set_refrig_dly_relay(target_state);
             break;

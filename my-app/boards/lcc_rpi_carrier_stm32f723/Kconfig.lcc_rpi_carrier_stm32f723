@@ -1,6 +1,9 @@
 config BOARD_LCC_RPI_CARRIER_STM32F723
     bool "LCC RPi Carrier STM32F723"
     select SOC_STM32F723XX
+    select ADC_CONFIGURABLE_INPUTS
+    select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+    select ADC_CONFIGURABLE_VBIAS_PIN
 
 config BOARD
     default "lcc_rpi_carrier_stm32f723"

@@ -34,7 +34,37 @@
      * GPIO CONFIGURATIONS (LEDS, BUTTONS, & GENERAL PURPOSE IO)
      * =========================================================================
      */
+    rtd_mux: rtd_mux {
+        compatible = "gpio-leds";
 
+        mux_addr2: mux_a2 {
+            gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+            label = "RTD_MUX_A2";
+        };
+        mux_addr1: mux_a1 {
+            gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+            label = "RTD_MUX_A1";
+        };
+        mux_addr0: mux_a0 {
+            gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+            label = "RTD_MUX_A0";
+        };
+
+        /*Complementary MUX Enable / Select Pins */
+        mux_en1_b9: mux_en1_b9 {
+            gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+            label = "RTD_MUX_EN_PB9";
+        };
+        mux_en2_a1: mux_en2_a1 {
+            gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+            label = "RTD_MUX_EN_PA1";
+        };
+
+
+
+
+    };
+    
     /* Standard LED Nodes */
     leds {
         compatible = "gpio-leds";
@@ -121,6 +151,13 @@
         /* ADD THESE TWO LINES FOR YOUR TASKS */
         vacuum-gpio = &gpio_pd13;    /* Points to io_pd13 (Pin D13) */
         collector-gpio = &gpio_pb1; /* Points to io_pb1 (Pin B1) */
+        mux-a0 = &mux_addr0;
+        mux-a1 = &mux_addr1;
+        mux-a2 = &mux_addr2;
+
+         /* Aliases for PB9 and PA1 */
+        mux-en1 = &mux_en1_b9;
+        mux-en2 = &mux_en2_a1;
 
     };
 };
@@ -261,8 +298,8 @@
     status = "okay";
     
     /* Define the CS pin here for the bus controller */
-    cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>,
-               <&gpioe 9 GPIO_ACTIVE_LOW>;
+    cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+            //    <&gpioe 9 GPIO_ACTIVE_LOW>;
     
 
     /* Existing ADS124S08 using CS index 0 */
@@ -275,7 +312,7 @@
         #address-cells = <1>;
         #size-cells = <0>;
 
-        idac-current = <500>;
+        idac-current = <100>;
         drdy-gpios = <&gpioc 8 GPIO_ACTIVE_LOW>; 
         reset-gpios = <&gpiob 15 GPIO_ACTIVE_LOW>;
 
@@ -290,20 +327,20 @@
     };
 
 
-    ltc2983: ltc2983@1 {
-        compatible = "adi,ltc2983";
-        reg = <1>;
+    // ltc2983: ltc2983@1 {
+    //     compatible = "adi,ltc2983";
+    //     reg = <1>;
 
-        spi-max-frequency = <1000000>;
+    //     spi-max-frequency = <1000000>;
 
-        spi-cpha;
+    //     spi-cpha;
 
-        duplex = <0>;
-        frame-format = <0>;
-        spi-interframe-delay-ns = <0>;
+    //     duplex = <0>;
+    //     frame-format = <0>;
+    //     spi-interframe-delay-ns = <0>;
 
-        status = "okay";
-    };
+    //     status = "okay";
+    // };
 
 };
 

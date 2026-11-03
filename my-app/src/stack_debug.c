@@ -9,7 +9,8 @@ void print_stack_usage(void)
 
     int ret = k_thread_stack_space_get(k_current_get(), &unused);
 
-    if (ret == 0) {
+    if (ret == 0) 
+    {
     //    //LOG_INF("Thread %s unused stack: %u bytes",
     //             k_thread_name_get(k_current_get()),
     //             unused);

@@ -20,7 +20,7 @@ void pushSampleVacuum3(void);
 void pushSampleVacuum4(void);
 void pushSampleVacuum5(void);
 void pushSampleVacuum6(void);
-void pushShellDryChamberTemp(void);
+// void pushShellDryChamberTemp(void);
 void PushShelf1Temp(void);
 void PushSample1Temp(void);
 void PushTiltSwitch(void);
@@ -86,7 +86,7 @@ void PushSensorData(uint8_t action)
             pushSampleVacuum6();
             break;
         case SENSOR_SHELL_DRY_LEXSOL:
-            pushShellDryChamberTemp();
+            // pushShellDryChamberTemp();
             break;
         case SENSOR_SHELF1_TEMP:
             PushShelf1Temp();
@@ -237,31 +237,31 @@ void pushSampleVacuum6(void)
     push_sensor_data( SENSOR_SAMPLE_VAC6, &current_state,sizeof(current_state));
 }
 
-void pushShellDryChamberTemp(void)
-{
-    uint8_t out_data[2] = {0xFF, 0x7F}; 
+// void pushShellDryChamberTemp(void)
+// {
+//     uint8_t out_data[2] = {0xFF, 0x7F}; 
 
-    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+//     k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
     
-    if (u8_ProductID == IAM_TRIAD) 
-    {
-        uint32_t age = k_uptime_get_32() - MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms;
-        if (age < 5000) {
-            memcpy(out_data, MainIOBShadowMemory.TRIAD.ADC_Sensors.ShellDryChamberTemp.raw, 2);
-        }
-    }
-    else if (u8_ProductID == IAM_FD) 
-    {
-        uint32_t age = k_uptime_get_32() - MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms;
-        if (age < 5000) {
-            memcpy(out_data, MainIOBShadowMemory.FD.ADC_Sensors.ShellDryChamberTemp.raw, 2);
-        }
-    }
+//     if (u8_ProductID == IAM_TRIAD) 
+//     {
+//         uint32_t age = k_uptime_get_32() - MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms;
+//         if (age < 5000) {
+//             memcpy(out_data, MainIOBShadowMemory.TRIAD.ADC_Sensors.ShellDryChamberTemp.raw, 2);
+//         }
+//     }
+//     else if (u8_ProductID == IAM_FD) 
+//     {
+//         uint32_t age = k_uptime_get_32() - MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms;
+//         if (age < 5000) {
+//             memcpy(out_data, MainIOBShadowMemory.FD.ADC_Sensors.ShellDryChamberTemp.raw, 2);
+//         }
+//     }
 
-    k_mutex_unlock(&shadow_memory_mutex);
+//     k_mutex_unlock(&shadow_memory_mutex);
 
-    push_sensor_data(SENSOR_SHELL_DRY_LEXSOL, out_data, 2);
-}
+//     push_sensor_data(SENSOR_SHELL_DRY_LEXSOL, out_data, 2);
+// }
 
 void PushShelf1Temp(void)
 {

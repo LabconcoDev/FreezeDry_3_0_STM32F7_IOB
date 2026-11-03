@@ -1,11 +1,11 @@
-#ifndef SYSTEM_CONFIG_H
-#define SYSTEM_CONFIG_H
+#ifndef BUILD_CONFIG_H
+#define BUILD_CONFIG_H
 
 /* ======================================================== */
-/* MASTER SIMULATION SWITCH                                 */
+/*  SIMULATION SWITCH                                 */
 /* Comment out this line to return to physical hardware!    */
 /* ======================================================== */
-#define SIMULATION 1
+// #define SIMULATION 1
 
 
-#endif /* SYSTEM_CONFIG_H */
+#endif /* BUILD_CONFIG_H */

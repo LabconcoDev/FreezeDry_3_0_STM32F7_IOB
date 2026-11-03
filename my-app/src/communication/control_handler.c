@@ -75,7 +75,7 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
             break;
 
 
-        case CONTROL_REFRIG_DLY_RLY: // This is second stage compressor
+        case CONTROL_SECOND_STAGE_REFRIG_RLY  : // This is second stage compressor
             if (cls==CLASS_READ)
             {
                 pushRefrigDlyRly(); // need to pass port as a parameter
@@ -376,7 +376,7 @@ void pushRefrigDlyRly(void)
     size_t frame_len = fd_serializer_build_frame(tx_buf, sizeof(tx_buf),
                                                  CLASS_PUSH,          // The reply class
                                                  TYPE_CONTROL,        // The Type
-                                                 CONTROL_REFRIG_DLY_RLY,  // The Action
+                                                 CONTROL_SECOND_STAGE_REFRIG_RLY,  // The Action
                                                  &current_state,      // The data we are sending back
                                                  1);                  // Length of the data (1 byte)
     if (frame_len > 0) 

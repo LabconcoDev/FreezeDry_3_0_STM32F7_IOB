@@ -30,3 +30,5 @@ endforeach()
 list(REMOVE_DUPLICATES APP_INCLUDE_DIRS)
 # Give the list of folders to the compiler
 target_include_directories(app PRIVATE ${APP_INCLUDE_DIRS})
+
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/adc)

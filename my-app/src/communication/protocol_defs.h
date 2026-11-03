@@ -31,7 +31,7 @@ typedef enum {
     CONTROL_VACUUM_RLY              = 0x02,
     CONTROL_PURGE_RLY               = 0x03,
     CONTROL_SHELL_RLY               = 0x04,
-    CONTROL_REFRIG_DLY_RLY          = 0x05, // this is second compressor
+    CONTROL_SECOND_STAGE_REFRIG_RLY = 0x05, // this is second compressor
     CONTROL_VENT_VALVE              = 0x06,
     CONTROL_DEFROST_RELAY           = 0x07,
     CONTROL_MINI_CHAMBER_HTR        = 0x08,
@@ -46,6 +46,11 @@ typedef enum {
     CONTROL_REF_VALVE_RLY           = 0x11,
     CONTROL_TILT_VALVE              = 0x12,
     CONTROL_5V_FAN_DRV              = 0x13,
+
+    /*Program related control messages */
+    CONTROL_PROGRAM_START           = 0x30,
+    CONTROL_PROGRAM_STOP            = 0x31,
+    CONTROL_PROGRAM_UPDATE          = 0x32,
 
     /* Add others from ICD as needed... */
 } fd_ctrl_action_t;
@@ -62,11 +67,13 @@ typedef enum {
     SYSTEM_PING                 = 0x08,
     SYSTEM_TERMINAL             = 0x09,
     SYSTEM_PRODUCT_TYPE         = 0x0A,
+
+    SYSTEM_END_POINT_CONFIG     = 0x10,
     /* Add others from ICD as needed... */
 } fd_system_action_t;
 
 
-
+/*Sensor actions need update based on final ICD and IO document, some sensor actions might be duplicate, need to merge*/
 typedef enum {
     SENSOR_COLLECTOR_TEMP                = 0x01,
     SENSOR_MINI_CHAMBER_TEMP             = 0x02,
@@ -78,7 +85,7 @@ typedef enum {
     SENSOR_SAMPLE_VAC5                   = 0x08,
     SENSOR_SAMPLE_VAC6                   = 0x09,
     SENSOR_MOISTURE                      = 0x0A,
-    SENSOR_SHELL_TEMP_SENSOR             = 0x0B,
+    SENSOR_SHELL_FREEZER_TEMP_SENSOR     = 0x0B,
     SENSOR_SHELF1_TEMP                   = 0x0C,
     SENSOR_SHELF2_TEMP                   = 0x0D,
     SENSOR_SHELF3_TEMP                   = 0x0E,
@@ -91,10 +98,54 @@ typedef enum {
     SENSOR_SAMPLE5_TEMP                  = 0x15,
     SENSOR_DOOR_SW                       = 0x16,
     SENSOR_TILT_SW                       = 0x17,
-    SENSOR_SHELL_DRY_LEXSOL              = 0x18,
+    SENSOR_SHELL_DRY_LEXSOL              = 0x18,  // change this to just lexsol
+    SENSOR_LEXSOL_TEMP                   = 0x19, 
+
+     /* 11 Generic RTD Sensor Actions */
+    SENSOR_RTD_TEMP1                     = 0x20,
+    SENSOR_RTD_TEMP2                     = 0x21,
+    SENSOR_RTD_TEMP3                     = 0x22,
+    SENSOR_RTD_TEMP4                     = 0x23,
+    SENSOR_RTD_TEMP5                     = 0x24,
+    SENSOR_RTD_TEMP6                     = 0x25,
+    SENSOR_RTD_TEMP7                     = 0x26,
+    SENSOR_RTD_TEMP8                     = 0x27,
+    SENSOR_RTD_TEMP9                     = 0x28,
+    SENSOR_RTD_TEMP10                    = 0x29,
+    SENSOR_RTD_TEMP11                    = 0x2A,
     
     /* Add others from ICD as needed... */
 } fd_sensor_action_t;
+
+
+typedef enum {
+    ALERT_COLLECTOR_TEMP_OUT_OF_BOUND    = 0x01,
+    ALERT_VACUUM_SENSOR_FAILURE          = 0x02,
+    ALERT_TEMP_SENSOR_FAILURE            = 0x03,
+    ALERT_VACUUM_LEAK                    = 0x04,
+    ALERT_VACUUM_VARIANCE                = 0x05, 
+    ALERT_TEMP_VARIANCE                  = 0x06,
+    ALERT_TEMP_TARGET_SETPOINT_FAIL      = 0x07,
+    ALERT_VACUUM_MAINT_SETPOINT_FAIL     = 0x08,
+    ALERT_SERVICE_VACUUM_PUMP            = 0x09,
+    ALERT_COLLECTOR_MOISTURE_DETECTED    = 0x0A,
+    ALERT_PLATEN_TILT                    = 0x0B,
+    ALERT_DOOR_OPEN                      = 0x0C,
+    ALERT_END_POINT_1_ACHIEVED           = 0x0D,
+    ALERT_END_POINT_2_ACHIEVED           = 0x0E,
+    ALERT_END_POINT_3_ACHIEVED           = 0x0F,
+    ALERT_END_POINT_4_ACHIEVED           = 0x10,
+    ALERT_END_POINT_5_ACHIEVED           = 0x11,
+    ALERT_END_POINT_6_ACHIEVED           = 0x12,
+
+    /*Program related Messages*/
+    ALERT_PROGRAM_COMPLETE               = 0x30,
+    ALERT_PROGRAM_SEGMENT_COMPLETE       = 0x31,
+
+    
+    /* Add others from ICD as needed... */
+} fd_alert_action_t;
+
 
 
 

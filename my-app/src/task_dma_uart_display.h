@@ -14,4 +14,6 @@ int dma_uart_display_init(void);
  */
 void dma_uart_display_run(void);
 
+void dma_uart_tx_thread(void);
+
 #endif /* TASK_DMA_UART_DISPLAY_H_ */

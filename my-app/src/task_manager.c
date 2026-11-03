@@ -3,6 +3,7 @@
 #include "task_manager.h"
 #include "task_ads124s08.h"
 #include "task_telemetry.h"
+#include "task_dma_uart_display.h"
 #include <string.h>
 LOG_MODULE_REGISTER(task_manager, LOG_LEVEL_INF);
 
@@ -11,16 +12,28 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3);
 
 /* =========================================================
  * 1. TRUE COMPILE-TIME THREAD CREATION
- * Changed K_FOREVER to SYS_FOREVER_MS to fix compiler macro error
  * ========================================================= */
 #define TASK_STACK_SIZE_1024 1024
+#define TASK_STACK_SIZE_2048 2048
+/*
+ * K_THREAD_DEFINE creates a Zephyr thread at compile time.
+ * Parameters: thread ID, stack size, entry function, 3 arguments,
+ * priority(-ve : Cooperative, +ve : Preemptive scheduling), options, and initial delay.
+ *
+ * SYS_FOREVER_MS means the thread is created but does not start
+ * automatically. It is explicitly started later using k_thread_start().
+ */
+
 
 K_THREAD_DEFINE(vacuum_tid,             TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 6, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(collector_tid,          TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 7, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(smf_tid,                TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 5, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(test5_tid,              TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 3, 0, SYS_FOREVER_MS);
+
+K_THREAD_DEFINE(dma_rx_tid,             TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(dma_tx_tid,             TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(ads_tid,                TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
+
+K_THREAD_DEFINE(ads_tid,                TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(acc_uart_tid,           TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
 K_THREAD_DEFINE(display_telemetry_tid,  TASK_STACK_SIZE_1024, task_worker_wrapper, NULL, NULL, NULL, 2, 0, SYS_FOREVER_MS);
 
@@ -63,11 +76,18 @@ static struct app_task task_table[] = {
     },
 
     {
-        .name        = "Task4: DMA UART Display",
+        .name        = "Task4a: DMA UART Display RX",
         .init        = dma_uart_display_init,   
         .handler     = dma_uart_display_run,    
-        .interval_ms = 0,                           // This is an event or interrupt driven task
-        .thread_id   = dma_tx_tid,
+        .interval_ms = 0,
+        .thread_id   = dma_rx_tid,   
+    },
+    {
+        .name        = "Task4b: DMA UART Display TX",
+        .init        = NULL,   
+        .handler     = dma_uart_tx_thread,    
+        .interval_ms = 0,
+        .thread_id   = dma_tx_tid,    
     },
 
     {
@@ -102,9 +122,6 @@ static struct app_task task_table[] = {
         .thread_id   = display_telemetry_tid,
     },
 
-
-
-
 };
 
 #define NUM_TASKS ARRAY_SIZE(task_table)
@@ -120,24 +137,26 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3)
     k_tid_t my_id = k_current_get();
 
     // Dynamically match this running thread to its configuration table entry
-    for (size_t i = 0; i < NUM_TASKS; i++) {
-        if (task_table[i].thread_id == my_id) {
+    for (size_t i = 0; i < NUM_TASKS; i++) 
+    {
+        if (task_table[i].thread_id == my_id) 
+        {
             task = &task_table[i];
             break;
         }
     }
 
-    if (!task) {
+    if (!task) 
+    {
         printk("[CRITICAL] Thread %p failed to map to a configuration context!\n", my_id);
         return;
     }
 
     printk("\n[THREAD ENTERED] %s\n", task->name);
 
-
-    while (1) {
-        //printk("[THREAD LOOP] %s count=%d\n", task->name, counter++);
-
+    // Master brain of periodic task running
+    while (1) 
+    {
         size_t unused = 0;
         k_thread_stack_space_get(task->thread_id, &unused);
         printk("[STACK UNUSED] %s = %zu\n", task->name, unused);
@@ -151,25 +170,34 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3)
 }
 
 /* =========================================================
- * 4. PUBLIC INTERFACE
+ * 4. Task Start Up
  * ========================================================= */
 void start_all_tasks(void)
 {
     LOG_INF("Initializing and starting all static tasks...");
 
-    for (size_t i = 0; i < NUM_TASKS; i++) {
+    for (size_t i = 0; i < NUM_TASKS; i++) 
+    {
         struct app_task *task = &task_table[i];
+                /* --- ONLY START ADS TASK --- */
+        if (task->thread_id != ads_tid) {
+            continue; // Skip every other task!
+        }
         
         LOG_INF("Starting %s", task->name);
 
         // 1. Run peripheral hardware init safely
-        if (task->init() < 0) {
-            LOG_ERR("[%s] init failed! Thread will remain suspended.", task->name);
-            continue; // Skip starting this thread to protect the system
+        if (task->init != NULL)
+        {
+            if (task->init() < 0) 
+            {
+                LOG_ERR("[%s] init failed! Thread will remain suspended.", task->name);
+                continue; // Skip starting this thread to protect the system
+            }
         }
         LOG_INF("%s init OK", task->name);
 
-        // 2. Assign thread name and wake it up safely 
+        // 2. Assign thread name and wake it up 
         k_thread_name_set(task->thread_id, task->name);
         k_thread_start(task->thread_id);
         
