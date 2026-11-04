@@ -312,7 +312,7 @@
         #address-cells = <1>;
         #size-cells = <0>;
 
-        idac-current = <100>;
+        idac-current = <500>;
         drdy-gpios = <&gpioc 8 GPIO_ACTIVE_LOW>; 
         reset-gpios = <&gpiob 15 GPIO_ACTIVE_LOW>;
 

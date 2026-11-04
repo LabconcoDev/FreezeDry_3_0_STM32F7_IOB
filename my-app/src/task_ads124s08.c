@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(task_ads, LOG_LEVEL_INF);
 
 /* RTD constants */
 #define VREF            2.5f
-#define IDAC_CURRENT    0.00025f
+#define IDAC_CURRENT    0.000500f
 #define ADC_FS          8388608.0f
 
 #define RREF        2058.0f
@@ -36,32 +36,34 @@ static const struct gpio_dt_spec mux_en2 = GPIO_DT_SPEC_GET(DT_ALIAS(mux_en2), g
 /* Helper to drive address lines 000 to 111 */
 static void set_rtd_mux_channel(uint8_t address)
 {
-    /* Address bits 0-2 */
-    gpio_pin_set_dt(&mux_a0, (address >> 0) & 0x01); // PC4 (bit 0)
-    gpio_pin_set_dt(&mux_a1, (address >> 1) & 0x01); // PE9 (bit 1)
-    gpio_pin_set_dt(&mux_a2, (address >> 2) & 0x01); // PC9 (bit 2)
 
-    /* 2. MUX Enable (Bit 3):
-     * address 0-7  (bit 3 = 0) -> Select MUX 1: PB9 = 1, PA1 = 0
-     * address 8-10 (bit 3 = 1) -> Select MUX 2: PB9 = 0, PA1 = 1
-     */
-    bool select_mux2 = (address >> 3) & 0x01;
-    if (!select_mux2) 
+
+    gpio_pin_set_dt(&mux_en1, 0);
+    gpio_pin_set_dt(&mux_en2, 0);
+
+    /* Change MUX address */
+    gpio_pin_set_dt(&mux_a0, (address >> 0) & 1);
+    gpio_pin_set_dt(&mux_a1, (address >> 1) & 1);
+    gpio_pin_set_dt(&mux_a2, (address >> 2) & 1);
+
+    if (address < 8) 
     {
         gpio_pin_set_dt(&mux_en1, 1);
-        gpio_pin_set_dt(&mux_en2, 0); // PA1 is NOT(PB9)
     } 
     else 
     {
-        gpio_pin_set_dt(&mux_en1, 0);
-        gpio_pin_set_dt(&mux_en2, 1); // PA1 is NOT(PB9)
+        gpio_pin_set_dt(&mux_en2, 1);
     }
+
+    /* Initial analog settling delay */
+    k_msleep(10);
 }
 
 /* ========================================================
  * PRODUCT-SPECIFIC RTD CONFIGURATIONS
  * ======================================================== */
-struct rtd_config {
+struct rtd_config 
+{
     uint8_t channel_id;
     uint8_t input_positive; // ADS124S08 sense pin (AIN3 to AIN10)
     uint8_t input_negative; // ADS_AINCOM (12)
@@ -70,12 +72,14 @@ struct rtd_config {
     uint8_t action_id;
 };
 /* 1a. Freeze Dry (With Mini Chamber) */
-static const struct rtd_config fd_mini_chamber_configs[] = {
+static const struct rtd_config fd_mini_chamber_configs[] = 
+{
     { .channel_id = 0, .input_positive = 1, .input_negative = 0, .idac_pin = 5, .action_id = SENSOR_COLLECTOR_TEMP },
     { .channel_id = 1, .input_positive = 3, .input_negative = 2, .idac_pin = 5, .action_id = SENSOR_MINI_CHAMBER_TEMP }
 };
 /* 1b. Freeze Dry (With Shell Freezer) */
-static const struct rtd_config fd_shell_configs[] = {
+static const struct rtd_config fd_shell_configs[] = 
+{
     { .channel_id = 0, .input_positive = 1, .input_negative = 0, .idac_pin = 5, .action_id = SENSOR_COLLECTOR_TEMP },
     { .channel_id = 1, .input_positive = 3, .input_negative = 2, .idac_pin = 5, .action_id = SENSOR_SHELL_FREEZER_TEMP_SENSOR }
 };
@@ -219,106 +223,235 @@ void ads_task_run(void)
     save_temp_to_memory(SENSOR_SHELF1_TEMP, fake_shelf);
     save_temp_to_memory(SENSOR_SAMPLE1_TEMP, fake_shelf + 10);
 
+
 #else
     /* --- HARDWARE CODE --- */
-    int err;
-    int32_t adc_val1 = 0;
-    int32_t adc_val2 = 0;
-    /* Read all 11 RTDs sequentially */
 
-    
-    for (int i = 0; i < num_active_rtds; i++) 
+    #define NUM_SAMPLES 5
+
+    int err;
+    int32_t adc_samples[NUM_SAMPLES];
+
+    /* Read all RTDs sequentially */
+    for (int i = 0; i < num_active_rtds; i++)
     {
-        k_msleep(200);
-        /* 1. Select the sensor via the external MUX */
+        /* 1. Select RTD using external MUX */
         set_rtd_mux_channel(active_rtds[i].mux_channel);
-        /* 2. Settle time for MUX switch and analog filter (e.g. 1 ms) */
-        k_msleep(200);
-        /* 3. Setup ADS124S08: IDAC1 stays on AIN11, sense on active input_positive */
-        struct adc_channel_cfg cfg = {
+
+        /* Allow MUX and analog circuit to settle */
+        k_msleep(100);
+
+        /* 2. Configure ADS124S08 */
+        struct adc_channel_cfg cfg = 
+        {
             .channel_id = 0,
             .differential = true,
             .input_positive = active_rtds[i].input_positive,
             .input_negative = active_rtds[i].input_negative,
             .gain = ADC_GAIN_1,
-            .reference = ADC_REF_EXTERNAL0,
+            .reference =ADC_REF_EXTERNAL0 , // ADC_REF_INTERNAL
             .acquisition_time = ADC_ACQ_TIME_DEFAULT,
             .current_source_pin_set = true,
-            .current_source_pin = { 11, 15 } /* IDAC1 on AIN11, IDAC2 off */
+            .current_source_pin = { 11, 15 }
         };
-             
-        
-        
+
         err = adc_channel_setup(ads_dev, &cfg);
-        if (err != 0) 
+        
+        k_msleep(100);
+
+        if (err != 0)
         {
-            LOG_ERR("ADC MUX setup failed for RTD%d: %d", i + 1, err);
+            LOG_ERR("ADC setup failed for RTD%d: %d", i + 1, err);
             continue;
         }
-        
-        /* Declare the sequence buffer for reading channel 0 */
+
+        /* 3. Configure ADC sequence */
         struct adc_sequence sequence = {
             .channels = BIT(0),
-            .buffer = &adc_val1,
-            .buffer_size = sizeof(adc_val1),
+            .buffer = &adc_samples[0],
+            .buffer_size = sizeof(adc_samples[0]),
             .resolution = 24,
             .oversampling = 0,
             .calibrate = false,
         };
-        k_msleep(500);
-        
-        /* 1st Read */
-        sequence.buffer = &adc_val1;
-        adc_read(ads_dev, &sequence);
-        float r1 = adc_to_resistance(adc_val1);
-        float t1 = resistance_to_temperature(r1);
-        /* 2nd Read */
-        sequence.buffer = &adc_val2;
-        err = adc_read(ads_dev, &sequence);
-        if (err == 0) 
+
+        float resistance_sum = 0.0f;
+        float temperature_sum = 0.0f;
+        int32_t adc_sum = 0;
+
+        printk("\n========== RTD%d (AIN%d) ==========\n",
+               i + 1,
+               active_rtds[i].input_positive);
+
+        /* 4. Take 5 readings */
+        for (int sample = 0; sample < NUM_SAMPLES; sample++)
         {
-            float r2 = adc_to_resistance(adc_val2);
-            float t2 = resistance_to_temperature(r2);
-            save_temp_to_memory(active_rtds[i].action_id, (int16_t)(t2 * 10.0f));
-            /* Print 1st Read then 2nd Read */
-                        /* Print 1st Read then 2nd Read with Code in Decimal */
-            printk("\x1b[1;0uRTD%02d (AIN%d) [Read 1]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n",
-                i + 1, active_rtds[i].input_positive,
-                (long)adc_val1, (double)r1, (double)t1);
+            sequence.buffer = &adc_samples[sample];
 
-            printk("RTD%02d (AIN%d) [Read 2]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
-                i + 1, active_rtds[i].input_positive,
-                (long)adc_val2, (double)r2, (double)t2);
+            err = adc_read(ads_dev, &sequence);
+
+            if (err != 0)
+            {
+                LOG_ERR("ADC read failed RTD%d Sample%d: %d",
+                        i + 1, sample + 1, err);
+                continue;
+            }
+
+            int32_t adc_value = adc_samples[sample];
+
+            float resistance = adc_to_resistance(adc_value);
+            float temperature = resistance_to_temperature(resistance);
+
+            adc_sum += adc_value;
+            resistance_sum += resistance;
+            temperature_sum += temperature;
+
+            /* Print every individual reading */
+            printk("RTD%d | Sample %d | ADC=%ld | R=%.3f Ohm | Temp=%.3f C\n",
+                   i + 1,
+                   sample + 1,
+                   (long)adc_value,
+                   (double)resistance,
+                   (double)temperature);
+
+            k_msleep(20);
         }
-        
-        // /* 1st Read: Dummy read to flush digital filter and discard */
-        // adc_read(ads_dev, &sequence);
-        // /* 2nd Read: Valid, fully settled reading to keep */
-        // err = adc_read(ads_dev, &sequence);
-        // if (err == 0) 
-        // {
-        //     float resistance = adc_to_resistance(adc_value);
-        //     float temperature = resistance_to_temperature(resistance);
-            
-        //     /* Scale float (20.5 C) to protocol int16_t (205) */
-        //     int16_t temp_scaled = (int16_t)(temperature * 10.0f);
-            
-        //     /* Save to memory using its SENSOR_RTD_TEMP ID */
-        //     save_temp_to_memory(active_rtds[i].action_id, temp_scaled);
-            
-        //     // printk("RTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n",  i + 1, active_rtds[i].input_positive,(uint32_t)(adc_value & 0x00FFFFFF),
-        //     //         (double)resistance, (double)temperature);
 
-        //     /* \x1b[1;0u switches to Terminal 1, \x1b[0;0u switches back to Terminal 0 */
-        //     printk("\x1b[1;0uRTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
-        //         i + 1, active_rtds[i].input_positive,
-        //         (uint32_t)(adc_value & 0x00FFFFFF),
-        //         (double)resistance, (double)temperature);
-        // } 
-        // else 
-        // {
-        //     LOG_ERR("ADC read failed on RTD%d: %d", i + 1, err);
-        // }
+        /* 5. Calculate averages */
+        float avg_adc = (float)adc_sum / NUM_SAMPLES;
+        float avg_resistance = resistance_sum / NUM_SAMPLES;
+        float avg_temperature = temperature_sum / NUM_SAMPLES;
+
+        printk("------------------------------------\n");
+
+        printk("RTD%d AVERAGE OF 5 SAMPLES:\n", i + 1);
+
+        printk("Average ADC Code : %.2f\n", (double)avg_adc);
+        printk("Average Resistance: %.3f Ohm\n", (double)avg_resistance);
+        printk("Average Temperature: %.3f C\n", (double)avg_temperature);
+
+        printk("====================================\n");
+
+        /* 6. Save averaged temperature */
+        save_temp_to_memory(
+            active_rtds[i].action_id,
+            (int16_t)(avg_temperature * 10.0f)
+        );
     }
+
 #endif
+
+
+
+// #else
+//     /* --- HARDWARE CODE --- */
+//     int err;
+//     int32_t adc_val1 = 0;
+//     int32_t adc_val2 = 0;
+//     /* Read all 11 RTDs sequentially */
+
+    
+//     for (int i = 0; i < num_active_rtds; i++) 
+//     {
+//         k_msleep(500);
+//         /* 1. Select the sensor via the external MUX */
+//         set_rtd_mux_channel(active_rtds[i].mux_channel);
+//         /* 2. Settle time for MUX switch and analog filter (e.g. 1 ms) */
+//         k_msleep(500);
+//         /* 3. Setup ADS124S08: IDAC1 stays on AIN11, sense on active input_positive */
+//         struct adc_channel_cfg cfg = {
+//             .channel_id = 0,
+//             .differential = true,
+//             .input_positive = active_rtds[i].input_positive,
+//             .input_negative = active_rtds[i].input_negative,
+//             .gain = ADC_GAIN_1,
+//             .reference = ADC_REF_EXTERNAL0,
+//             .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+//             .current_source_pin_set = true,
+//             .current_source_pin = { 11, 15 } /* IDAC1 on AIN11, IDAC2 off */
+//         };
+             
+        
+        
+//         err = adc_channel_setup(ads_dev, &cfg);
+//         if (err != 0) 
+//         {
+//             LOG_ERR("ADC MUX setup failed for RTD%d: %d", i + 1, err);
+//             continue;
+//         }
+        
+//         /* Declare the sequence buffer for reading channel 0 */
+//         struct adc_sequence sequence = {
+//             .channels = BIT(0),
+//             .buffer = &adc_val1,
+//             .buffer_size = sizeof(adc_val1),
+//             .resolution = 24,
+//             .oversampling = 0,
+//             .calibrate = false,
+//         };
+//         k_msleep(500);
+        
+//         /* 1st Read */
+//         sequence.buffer = &adc_val1;
+
+//         err = adc_read(ads_dev, &sequence);
+
+//         if (err != 0) {
+//             LOG_ERR("ADC Read 1 failed for RTD%d: %d", i + 1, err);
+//             continue;
+//         }
+
+
+//         float r1 = adc_to_resistance(adc_val1);
+//         float t1 = resistance_to_temperature(r1);
+//         k_msleep(500);
+//         /* 2nd Read */
+//         sequence.buffer = &adc_val2;
+//         err = adc_read(ads_dev, &sequence);
+//         if (err == 0) 
+//         {
+//             float r2 = adc_to_resistance(adc_val2);
+//             float t2 = resistance_to_temperature(r2);
+//             save_temp_to_memory(active_rtds[i].action_id, (int16_t)(t2 * 10.0f));
+//             /* Print 1st Read then 2nd Read */
+//                         /* Print 1st Read then 2nd Read with Code in Decimal */
+//             printk("\x1b[1;0uRTD%02d (AIN%d) [Read 1]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n",
+//                 i + 1, active_rtds[i].input_positive,
+//                 (long)adc_val1, (double)r1, (double)t1);
+
+//             printk("RTD%02d (AIN%d) [Read 2]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
+//                 i + 1, active_rtds[i].input_positive,
+//                 (long)adc_val2, (double)r2, (double)t2);
+//         }
+        
+//         // /* 1st Read: Dummy read to flush digital filter and discard */
+//         // adc_read(ads_dev, &sequence);
+//         // /* 2nd Read: Valid, fully settled reading to keep */
+//         // err = adc_read(ads_dev, &sequence);
+//         // if (err == 0) 
+//         // {
+//         //     float resistance = adc_to_resistance(adc_value);
+//         //     float temperature = resistance_to_temperature(resistance);
+            
+//         //     /* Scale float (20.5 C) to protocol int16_t (205) */
+//         //     int16_t temp_scaled = (int16_t)(temperature * 10.0f);
+            
+//         //     /* Save to memory using its SENSOR_RTD_TEMP ID */
+//         //     save_temp_to_memory(active_rtds[i].action_id, temp_scaled);
+            
+//         //     // printk("RTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n",  i + 1, active_rtds[i].input_positive,(uint32_t)(adc_value & 0x00FFFFFF),
+//         //     //         (double)resistance, (double)temperature);
+
+//         //     /* \x1b[1;0u switches to Terminal 1, \x1b[0;0u switches back to Terminal 0 */
+//         //     printk("\x1b[1;0uRTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
+//         //         i + 1, active_rtds[i].input_positive,
+//         //         (uint32_t)(adc_value & 0x00FFFFFF),
+//         //         (double)resistance, (double)temperature);
+//         // } 
+//         // else 
+//         // {
+//         //     LOG_ERR("ADC read failed on RTD%d: %d", i + 1, err);
+//         // }
+//     }
+// #endif
 }
