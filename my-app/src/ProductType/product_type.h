@@ -13,6 +13,7 @@
 uint8_t FindProductType(void);
 uint8_t FindAccessoryType(void);
 
+
 typedef enum
 {
     IAM_UNKNOWN = 0x0E,
@@ -20,7 +21,10 @@ typedef enum
     IAM_FD      = 0x01,
     IAM_TRIAD   = 0x02,
     IAM_BT      = 0x03,
-    IAM_ST      = 0x04
+    IAM_ST      = 0x04,
+
+    IAM_NO_ACCESSORY = 0x0F
+    
 
 } product_id_t;
 

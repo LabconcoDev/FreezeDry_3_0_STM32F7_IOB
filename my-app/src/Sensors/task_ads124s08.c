@@ -211,17 +211,22 @@ void ads_task_run(void)
 #ifdef SIMULATION
     /* --- SIMULATION CODE --- */
     static int16_t fake_collector = 200;  // 20.0 °C
-    static int16_t fake_shelf     = 100;  // 10.0 °C
+    static int16_t fake_shelf1     = 100;  // 10.0 °C
     
     fake_collector += 5;                 
-    fake_shelf     += 2;     
+    fake_shelf1     += 2;     
     if (fake_collector > 800) fake_collector = -200;           
-    if (fake_shelf > 400) fake_shelf = 0;
+    if (fake_shelf1 > 400) fake_shelf1 = 0;
     // Safely inject our fake data
     save_temp_to_memory(SENSOR_COLLECTOR_TEMP, fake_collector);
     save_temp_to_memory(SENSOR_SHELL_DRY_LEXSOL, fake_collector - 50);
-    save_temp_to_memory(SENSOR_SHELF1_TEMP, fake_shelf);
-    save_temp_to_memory(SENSOR_SAMPLE1_TEMP, fake_shelf + 10);
+    save_temp_to_memory(SENSOR_SHELF1_TEMP, fake_shelf1);
+    save_temp_to_memory(SENSOR_SAMPLE1_TEMP, fake_shelf1 + 10);
+
+    LOG_INF("[SIM] TEMPERATURE  COLLECTOR: %d DEGREE C" ,  fake_collector );
+    LOG_INF("[SIM] TEMPERATURE  LEXSOL: %d DEGREE C ", fake_collector - 50);
+    LOG_INF("[SIM] TEMPERATURE  SHELF1: %d DEGREE C" ,  fake_shelf1 );
+    LOG_INF("[SIM] TEMPERATURE  SAMPLE1: %d DEGREE C ",  fake_shelf1+10 );
 
 
 #else
@@ -341,117 +346,4 @@ void ads_task_run(void)
 
 #endif
 
-
-
-// #else
-//     /* --- HARDWARE CODE --- */
-//     int err;
-//     int32_t adc_val1 = 0;
-//     int32_t adc_val2 = 0;
-//     /* Read all 11 RTDs sequentially */
-
-    
-//     for (int i = 0; i < num_active_rtds; i++) 
-//     {
-//         k_msleep(500);
-//         /* 1. Select the sensor via the external MUX */
-//         set_rtd_mux_channel(active_rtds[i].mux_channel);
-//         /* 2. Settle time for MUX switch and analog filter (e.g. 1 ms) */
-//         k_msleep(500);
-//         /* 3. Setup ADS124S08: IDAC1 stays on AIN11, sense on active input_positive */
-//         struct adc_channel_cfg cfg = {
-//             .channel_id = 0,
-//             .differential = true,
-//             .input_positive = active_rtds[i].input_positive,
-//             .input_negative = active_rtds[i].input_negative,
-//             .gain = ADC_GAIN_1,
-//             .reference = ADC_REF_EXTERNAL0,
-//             .acquisition_time = ADC_ACQ_TIME_DEFAULT,
-//             .current_source_pin_set = true,
-//             .current_source_pin = { 11, 15 } /* IDAC1 on AIN11, IDAC2 off */
-//         };
-             
-        
-        
-//         err = adc_channel_setup(ads_dev, &cfg);
-//         if (err != 0) 
-//         {
-//             LOG_ERR("ADC MUX setup failed for RTD%d: %d", i + 1, err);
-//             continue;
-//         }
-        
-//         /* Declare the sequence buffer for reading channel 0 */
-//         struct adc_sequence sequence = {
-//             .channels = BIT(0),
-//             .buffer = &adc_val1,
-//             .buffer_size = sizeof(adc_val1),
-//             .resolution = 24,
-//             .oversampling = 0,
-//             .calibrate = false,
-//         };
-//         k_msleep(500);
-        
-//         /* 1st Read */
-//         sequence.buffer = &adc_val1;
-
-//         err = adc_read(ads_dev, &sequence);
-
-//         if (err != 0) {
-//             LOG_ERR("ADC Read 1 failed for RTD%d: %d", i + 1, err);
-//             continue;
-//         }
-
-
-//         float r1 = adc_to_resistance(adc_val1);
-//         float t1 = resistance_to_temperature(r1);
-//         k_msleep(500);
-//         /* 2nd Read */
-//         sequence.buffer = &adc_val2;
-//         err = adc_read(ads_dev, &sequence);
-//         if (err == 0) 
-//         {
-//             float r2 = adc_to_resistance(adc_val2);
-//             float t2 = resistance_to_temperature(r2);
-//             save_temp_to_memory(active_rtds[i].action_id, (int16_t)(t2 * 10.0f));
-//             /* Print 1st Read then 2nd Read */
-//                         /* Print 1st Read then 2nd Read with Code in Decimal */
-//             printk("\x1b[1;0uRTD%02d (AIN%d) [Read 1]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n",
-//                 i + 1, active_rtds[i].input_positive,
-//                 (long)adc_val1, (double)r1, (double)t1);
-
-//             printk("RTD%02d (AIN%d) [Read 2]: Code=%ld | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
-//                 i + 1, active_rtds[i].input_positive,
-//                 (long)adc_val2, (double)r2, (double)t2);
-//         }
-        
-//         // /* 1st Read: Dummy read to flush digital filter and discard */
-//         // adc_read(ads_dev, &sequence);
-//         // /* 2nd Read: Valid, fully settled reading to keep */
-//         // err = adc_read(ads_dev, &sequence);
-//         // if (err == 0) 
-//         // {
-//         //     float resistance = adc_to_resistance(adc_value);
-//         //     float temperature = resistance_to_temperature(resistance);
-            
-//         //     /* Scale float (20.5 C) to protocol int16_t (205) */
-//         //     int16_t temp_scaled = (int16_t)(temperature * 10.0f);
-            
-//         //     /* Save to memory using its SENSOR_RTD_TEMP ID */
-//         //     save_temp_to_memory(active_rtds[i].action_id, temp_scaled);
-            
-//         //     // printk("RTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n",  i + 1, active_rtds[i].input_positive,(uint32_t)(adc_value & 0x00FFFFFF),
-//         //     //         (double)resistance, (double)temperature);
-
-//         //     /* \x1b[1;0u switches to Terminal 1, \x1b[0;0u switches back to Terminal 0 */
-//         //     printk("\x1b[1;0uRTD%02d (AIN%d): Code=0x%06X | R=%.2f Ohm | Temp=%.2f C\n\x1b[0;0u",
-//         //         i + 1, active_rtds[i].input_positive,
-//         //         (uint32_t)(adc_value & 0x00FFFFFF),
-//         //         (double)resistance, (double)temperature);
-//         // } 
-//         // else 
-//         // {
-//         //     LOG_ERR("ADC read failed on RTD%d: %d", i + 1, err);
-//         // }
-//     }
-// #endif
 }

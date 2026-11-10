@@ -24,6 +24,7 @@ void pushSampleVacuum6(void);
 void PushShelf1Temp(void);
 void PushSample1Temp(void);
 void PushTiltSwitch(void);
+void pushProgramStatus(void);
 extern struct k_mutex shadow_memory_mutex;
 void fd_sensor_handler_process(uint8_t cls, uint8_t action, const uint8_t *data, size_t data_len) 
 {
@@ -96,6 +97,10 @@ void PushSensorData(uint8_t action)
             break;
         case SENSOR_TILT_SW:
             PushTiltSwitch();
+            break;
+
+        case SENSOR_PROGRAM_STATUS:
+            pushProgramStatus();
             break;
         
 
@@ -318,4 +323,59 @@ void PushTiltSwitch(void)
     k_mutex_unlock(&shadow_memory_mutex);
 
     push_sensor_data(SENSOR_TILT_SW, out_data, 1);
+}
+
+
+
+static void push_system_data(uint8_t action,
+                             const uint8_t *data,
+                             size_t data_len)
+{
+    uint8_t tx_buf[32];
+
+    size_t frame_len = fd_serializer_build_frame(
+        tx_buf,
+        sizeof(tx_buf),
+        CLASS_PUSH,
+        TYPE_SYSTEM,
+        action,
+        data,
+        data_len);
+
+    if (frame_len > 0)
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("System PUSH message sent: action 0x%02X", action);
+    }
+    else
+    {
+        LOG_ERR("Failed to serialize system PUSH packet");
+    }
+}
+
+
+void pushIamAlive(void)
+{
+    push_system_data(SYSTEM_IAM_ALIVE, NULL, 0);
+}
+
+
+void pushProgramStatus(void)
+{
+    fd_program_status_payload_t status = {0};
+
+    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+    if (u8_ProductID == IAM_TRIAD) 
+    {
+        status.segment_no = MainIOBShadowMemory.TRIAD.Program_State.segment_no;
+        /* Mode in bits 0-3, Phase in bits 4-7 */
+        status.phase_and_mode = (MainIOBShadowMemory.TRIAD.Program_State.mode & 0x0F) |
+                               ((MainIOBShadowMemory.TRIAD.Program_State.phase & 0x0F) << 4);
+        uint16_t rem = MainIOBShadowMemory.TRIAD.Program_State.hold_time_remaining_min;
+        status.time_remaining_lsb = (uint8_t)(rem & 0xFF);
+        status.time_remaining_msb = (uint8_t)((rem >> 8) & 0xFF);
+    }
+    k_mutex_unlock(&shadow_memory_mutex);
+
+    push_sensor_data(SENSOR_PROGRAM_STATUS, (const uint8_t *)&status, sizeof(status));
 }

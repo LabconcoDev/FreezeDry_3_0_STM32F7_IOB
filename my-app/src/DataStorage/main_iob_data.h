@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "sensor_types.h"
-
+#include <stdbool.h>   
 void UpdateMainIOBData(uint8_t action, const uint8_t *data);
 
 typedef struct
@@ -33,6 +33,26 @@ typedef struct
 
 } FD_SensorData_t;
 
+
+
+
+
+
+typedef struct {
+    uint8_t  segment_no;
+    uint8_t  mode;                 /* 0=off, 1=manual, 2=auto, 3=program */
+    uint8_t  phase;                /* 0=Hold, 1=Ramp */
+    int16_t  shelf_target_dC;      /* In 0.1 C */
+    int16_t  ramp_rate;            /* In 0.01 C/min */
+    uint16_t vac_target_mbar;     /* In mTorr / uBar */
+    uint16_t hold_time_total_min;
+    uint16_t hold_time_remaining_min;
+    uint8_t  control_flags;
+    bool     is_running;
+} TRIAD_ProgramState_t;
+
+
+
 typedef struct
 {
     /* Group 1: All sensors updated by your local ADC Task */
@@ -56,6 +76,9 @@ typedef struct
         uint32_t            Last_Update_ms;        // Timestamp for this group
         SwitchStatus_t      TiltSwitch;
     } Digital_Sensors;
+
+
+    TRIAD_ProgramState_t    Program_State;
     
 } TRIAD_SensorData_t;
 

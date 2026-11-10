@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(dma_uart_display, LOG_LEVEL_INF);
 #define UART_DMA_NODE DT_NODELABEL(uart7) 
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DMA_NODE);
 
-static uint8_t display_tx_buffer[128] __nocache;
+static uint8_t display_tx_buffer[128] __aligned(32) __nocache;
 static atomic_t tx_busy = ATOMIC_INIT(0);
 
 /* RX Configuration: Double-buffering prevents data loss during processing */
@@ -67,6 +67,7 @@ static void dma_display_callback(const struct device *dev, struct uart_event *ev
     case UART_TX_ABORTED:
         LOG_ERR("Display DMA transaction aborted!");
         atomic_clear(&tx_busy);
+        k_sem_give(&tx_hardware_free_sem);
         break;
 
     /* --- RX Event Handling --- */
@@ -187,7 +188,15 @@ void dma_uart_tx_thread(void)
     {
         k_msgq_get(&tx_msgq, &msg, K_FOREVER);
         k_sem_take(&tx_hardware_free_sem, K_FOREVER);
-        uart_tx(uart_dev, msg.data, msg.len, SYS_FOREVER_US);
+
+        memcpy(display_tx_buffer, msg.data, msg.len);
+        sys_cache_data_flush_range(display_tx_buffer, msg.len);
+
+        int ret = uart_tx(uart_dev, display_tx_buffer, msg.len, SYS_FOREVER_US);
+        if (ret < 0) {
+            LOG_ERR("Failed to initiate Display DMA TX: %d", ret);
+            k_sem_give(&tx_hardware_free_sem);
+        }
     }
 }
 

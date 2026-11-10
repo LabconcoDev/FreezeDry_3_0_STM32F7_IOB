@@ -15,12 +15,16 @@ Synchronization while parameter to be fetched from the accessory board to be des
 #include <zephyr/logging/log.h>
 #include "serializer.h"
 #include "product_type.h"
-
+#include "main_iob_data.h"    
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(control_handler, LOG_LEVEL_INF);
 
 /* External link to the transmit function */
 extern void fd_protocol_send_dma(const uint8_t *data, size_t len);
+
+extern struct k_mutex shadow_memory_mutex;
+extern uint8_t u8_ProductID;
 
 void pushRefrigRly(void);
 void pushVacuumRly(void);
@@ -45,6 +49,9 @@ void push5VFanDrv(void);
 
 
 void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data, size_t data_len) {
+
+
+    printk("[CTRL HANDLER] Received Action: 0x%02X, cls: 0x%02X, len: %zu\n", action, cls, data_len);
     
 
     switch (action) {
@@ -272,6 +279,62 @@ void fd_control_handler_process(uint8_t cls, uint8_t action, const uint8_t *data
                 accessory_control_handler_process(action, data, data_len);
                 ControlHardware_Handler(action, data);
             }
+            break;
+        
+        /* ======================================================== */
+        /* CATEGORY 4: RECIPE & PROGRAM CONTROL                     */
+        /* ======================================================== */
+        case CONTROL_PROGRAM_START:
+        case CONTROL_PROGRAM_UPDATE:
+            if (data_len >= 11) 
+            {
+                const uint8_t *b = data;
+                uint8_t  seg_no   = b[0];
+                uint8_t  mode     = b[1];
+                int16_t  temp     = (int16_t)((b[2] << 8) | b[3]);
+                int16_t  ramp     = (int16_t)((b[4] << 8) | b[5]);
+                uint16_t vac      = (uint16_t)((b[6] << 8) | b[7]);
+                uint16_t time_min = (uint16_t)((b[8] << 8) | b[9]);
+                uint8_t  flags    = b[10];
+
+                /* Save to Shadow Memory under mutex */
+                k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+                if (u8_ProductID == IAM_TRIAD) 
+                {
+                    MainIOBShadowMemory.TRIAD.Program_State.segment_no = seg_no;
+                    MainIOBShadowMemory.TRIAD.Program_State.mode = mode;
+                    MainIOBShadowMemory.TRIAD.Program_State.shelf_target_dC = temp;
+                    MainIOBShadowMemory.TRIAD.Program_State.ramp_rate = ramp;
+                    MainIOBShadowMemory.TRIAD.Program_State.vac_target_mbar = vac;
+                    MainIOBShadowMemory.TRIAD.Program_State.hold_time_total_min = time_min;
+                    MainIOBShadowMemory.TRIAD.Program_State.hold_time_remaining_min = time_min;
+                    MainIOBShadowMemory.TRIAD.Program_State.control_flags = flags;
+                    MainIOBShadowMemory.TRIAD.Program_State.is_running = true;
+                }
+                k_mutex_unlock(&shadow_memory_mutex);
+
+                if (action == CONTROL_PROGRAM_START) 
+                {
+                    LOG_INF("Program START: Seg=%u, Mode=%u, Temp=%d, Vac=%u, Time=%u min, Flags=0x%02X",
+                            seg_no, mode, temp, vac, time_min, flags);
+                } 
+                else 
+                {
+                    LOG_INF("Program UPDATE: Seg=%u, Temp=%d, Vac=%u, Time=%u min",
+                            seg_no, temp, vac, time_min);
+                }
+            }
+            break;
+
+        case CONTROL_PROGRAM_STOP:
+            LOG_INF("Program STOP received (Seg=%u)", (data_len > 0) ? data[0] : 0);
+            k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+            if (u8_ProductID == IAM_TRIAD) 
+            {
+                MainIOBShadowMemory.TRIAD.Program_State.is_running = false;
+                MainIOBShadowMemory.TRIAD.Program_State.mode = 0; /* OFF */
+            }
+            k_mutex_unlock(&shadow_memory_mutex);
             break;
 
         default:
@@ -684,5 +747,44 @@ void push5VFanDrv(void)
     else 
     {
         LOG_ERR("Failed to serialize PUSH packet");
+    }
+}
+
+/* ========================================================
+ * PROGRAM NOTIFICATION (To send alerts to Display)
+ * ======================================================== */
+void pushProgramSegmentComplete(uint8_t completed_seg_no)
+{
+    uint8_t tx_buf[32];
+    size_t frame_len = fd_serializer_build_frame(
+        tx_buf, sizeof(tx_buf),
+        CLASS_PUSH,
+        TYPE_ALERT,
+        ALERT_PROGRAM_SEGMENT_COMPLETE, /* 0x31 */
+        &completed_seg_no,
+        1);
+
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed ALERT_PROGRAM_SEGMENT_COMPLETE: Seg=%u", completed_seg_no);
+    }
+}
+
+void pushProgramComplete(uint8_t final_seg_no)
+{
+    uint8_t tx_buf[32];
+    size_t frame_len = fd_serializer_build_frame(
+        tx_buf, sizeof(tx_buf),
+        CLASS_PUSH,
+        TYPE_ALERT,
+        ALERT_PROGRAM_COMPLETE, /* 0x30 */
+        &final_seg_no,
+        1);
+
+    if (frame_len > 0) 
+    {
+        fd_protocol_send_dma(tx_buf, frame_len);
+        LOG_INF("Pushed ALERT_PROGRAM_COMPLETE: Final Seg=%u", final_seg_no);
     }
 }

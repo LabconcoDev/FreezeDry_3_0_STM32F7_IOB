@@ -113,6 +113,9 @@ typedef enum {
     SENSOR_RTD_TEMP9                     = 0x28,
     SENSOR_RTD_TEMP10                    = 0x29,
     SENSOR_RTD_TEMP11                    = 0x2A,
+
+
+    SENSOR_PROGRAM_STATUS           = 0x30,
     
     /* Add others from ICD as needed... */
 } fd_sensor_action_t;
@@ -147,6 +150,38 @@ typedef enum {
 } fd_alert_action_t;
 
 
+
+/* =========================================================
+ * PROGRAM CONTROL & STATUS STRUCTURES (11 & 4 BYTES)
+ * ========================================================= */
+
+/* Bitmask for B10 Control Flags */
+#define PGM_CTRL_VAC_ON_OFF         (1U << 0)  /* Bit 0: Vac ON/OFF */
+#define PGM_CTRL_VAC_PROTECT        (1U << 1)  /* Bit 1: VAC Protect */
+#define PGM_CTRL_MAX_COLD           (1U << 2)  /* Bit 2: Max Cold */
+#define PGM_CTRL_INFINITE_HOLD      (1U << 3)  /* Bit 3: Infinite Hold */
+#define PGM_CTRL_IN_FLASK           (1U << 4)  /* Bit 4: In Flask */
+#define PGM_CTRL_AC_POWER_PAUSE     (1U << 5)  /* Bit 5: AC power Pause / tray power loss */
+#define PGM_CTRL_WARMING_LEXSOL     (1U << 6)  /* Bit 6: Warming Lexsol / Ghost segment */
+
+/* 11-Byte Payload for CONTROL_PROGRAM_START & CONTROL_PROGRAM_UPDATE */
+typedef struct __attribute__((packed)) {
+    uint8_t  segment_no;       /* B0: 0-255 */
+    uint8_t  mode;             /* B1: 0=off, 1=manual, 2=auto, 3=program */
+    int16_t  shelf_temp_dC;    /* B2-B3: Shelf Temp x 10 (MSB first) */
+    int16_t  ramp_rate;        /* B4-B5: Ramp Rate x 100 (MSB first) */
+    uint16_t vacuum_mbar;     /* B6-B7: Vacuum x 1000 (MSB first) */
+    uint16_t hold_time_mins;   /* B8-B9: Hold time in minutes (MSB first) */
+    uint8_t  control_flags;    /* B10: Control bitmask above */
+} fd_program_control_payload_t;
+
+/* 4-Byte Payload for SENSOR_PROGRAM_STATUS */
+typedef struct __attribute__((packed)) {
+    uint8_t segment_no;        /* B0: Currently running segment No. */
+    uint8_t phase_and_mode;    /* B1: Bits 0-3 = Mode, Bits 4-7 = Phase (0=Hold, 1=Ramp) */
+    uint8_t time_remaining_lsb; /* B2: LSB of time remaining */
+    uint8_t time_remaining_msb; /* B3: MSB of time remaining */
+} fd_program_status_payload_t;
 
 
 
