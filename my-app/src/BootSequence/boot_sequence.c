@@ -1,7 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include "boot_sequence.h"
-#include "task_manager.h"
+#include "thread_manager.h"
 #include "product_type.h"
 #include "main_iob_data.h"
 #include "accessory_iob_data.h"

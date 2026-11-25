@@ -1,5 +1,4 @@
-
-/*The structures here would be updated from the sensor directly*/
+/* The structures here are updated from the sensor tasks directly */
 
 #include "main_iob_data.h"
 #include "product_type.h"
@@ -13,61 +12,64 @@ LOG_MODULE_REGISTER(main_iob_data, LOG_LEVEL_INF);
 extern uint8_t u8_ProductID;
 MainIOBShadowMemory_u MainIOBShadowMemory;
 
-/* 2. Define the Mutex to protect against Race Conditions */
+/* Mutex to protect against race conditions */
 K_MUTEX_DEFINE(shadow_memory_mutex);
-
 
 void MainIOBMemoryAllocation(void)
 {
-    // Lock the memory before wiping it
     k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
-   
+
     memset(&MainIOBShadowMemory, 0, sizeof(MainIOBShadowMemory));
 
     if (u8_ProductID == IAM_FD)
     {
+        MainIOBShadowMemory.FD.Digital_Sensors.Moisture                        = MOISTURE_NO;
+        MainIOBShadowMemory.FD.Vacuum_Sensors.SystemVacuum.state.vacuum        = 0x7FFF;
 
-        /*
-         * FD:
-         * 1 Moisture
-         * 1 System Vacuum
-         * 6 Sample Vacuum
-         * 1 Collector Temperature
-         * 1 Shell Dry Chamber Temperature
-         */
-        /* FD SENSORS */
-        MainIOBShadowMemory.FD.Digital_Sensors.Moisture = MOISTURE_NO;
-        
-        MainIOBShadowMemory.FD.Vacuum_Sensors.SystemVacuum.state.vacuum = 0x7FFF;
-        
-        for (int i = 0; i < 6; i++) 
+        for (int i = 0; i < 6; i++)
         {
             MainIOBShadowMemory.FD.Vacuum_Sensors.SampleVacuum[i].state.vacuum = 0x7FFF;
         }
-        MainIOBShadowMemory.FD.ADC_Sensors.CollectorTemp.temperature       = 0x7FFF;
-        MainIOBShadowMemory.FD.ADC_Sensors.ShellDryChamberTemp.temperature = 0x7FFF;
+        for (int i = 0; i < 2; i++)
+        {
+            MainIOBShadowMemory.FD.Vacuum_Sensors.EndPointAddonVacuum[i].state.vacuum = 0x7FFF;
+        }
+
+        MainIOBShadowMemory.FD.ADC_Sensors.CollectorTemp.temperature           = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.AmbientTemp.temperature             = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.FirstStageHxOutletTemp.temperature  = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.SecondStageHxOutletTemp.temperature = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.FirstStageSuctionTemp.temperature   = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.SecondStageSuctionTemp.temperature  = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.ShellFreezerTemp.temperature        = 0x7FFF;
+        MainIOBShadowMemory.FD.ADC_Sensors.MiniChamberTemp.temperature         = 0x7FFF;
     }
 
     if (u8_ProductID == IAM_TRIAD)
     {
-        /*
-         * TRIAD:
-         * 1 System Vacuum
-         * 1 Collector Temperature
-         * 1 Shell Dry Chamber Temperature
-         * 1 Triad Shelf Temperature
-         * 1 Triad Sample Temperature
-         * 1 Tilt Switch
-         */
-        /* TRIAD SENSORS */
-        MainIOBShadowMemory.TRIAD.ADC_Sensors.CollectorTemp.temperature = 0x7FFF;
-        MainIOBShadowMemory.TRIAD.ADC_Sensors.ShellDryChamberTemp.temperature = 0x7FFF;
-        MainIOBShadowMemory.TRIAD.ADC_Sensors.ShelfTemp.temperature = 0x7FFF;
-        MainIOBShadowMemory.TRIAD.ADC_Sensors.SampleTemp.temperature = 0x7FFF;
-        
-        MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SystemVacuum.state.vacuum = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.CollectorTemp.temperature           = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.AmbientTemp.temperature             = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.LexsolTemp.temperature              = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.FirstStageHxOutletTemp.temperature  = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.SecondStageHxOutletTemp.temperature = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.FirstStageSuctionTemp.temperature   = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.SecondStageSuctionTemp.temperature  = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.ShelfTemp.temperature               = 0x7FFF;
+        MainIOBShadowMemory.TRIAD.ADC_Sensors.SampleTemp.temperature              = 0x7FFF;
+
+        MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SystemVacuum.state.vacuum        = 0x7FFF;
+        for (int i = 0; i < 6; i++)
+        {
+            MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SampleVacuum[i].state.vacuum = 0x7FFF;
+        }
+        for (int i = 0; i < 2; i++)
+        {
+            MainIOBShadowMemory.TRIAD.Vacuum_Sensors.EndPointAddonVacuum[i].state.vacuum = 0x7FFF;
+        }
+
         MainIOBShadowMemory.TRIAD.Digital_Sensors.TiltSwitch = SWITCH_OPEN;
     }
+
     k_mutex_unlock(&shadow_memory_mutex);
 }
 
@@ -76,41 +78,96 @@ void MainIOBMemoryAllocation(void)
 /* ======================================================== */
 void UpdateMainIOBData(uint8_t action, const uint8_t *data)
 {
-    // 1. Lock the Mutex so no other task can interrupt us while writing
-    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
-    if (u8_ProductID == IAM_TRIAD) 
+    if (data == NULL)
     {
-        switch (action) 
+        return;
+    }
+
+    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+
+    if (u8_ProductID == IAM_TRIAD)
+    {
+        switch (action)
         {
-            /* --- ADC TASK SENSORS --- */
+            /* --- ADC TASK SENSORS (2 bytes) --- */
             case SENSOR_COLLECTOR_TEMP:
                 memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.CollectorTemp.raw, data, 2);
                 MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
-            case SENSOR_SHELL_DRY_LEXSOL: // (Shell Chamber Temp)
-                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.ShellDryChamberTemp.raw, data, 2);
+
+            case SENSOR_AMBIENT_TEMPERATURE:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.AmbientTemp.raw, data, 2);
                 MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
+
+            case SENSOR_LEXSOL_TEMP:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.LexsolTemp.raw, data, 2);
+                MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_FIRST_STAGE_HEAT_EXCHANGER_OUTLET_TEMP:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.FirstStageHxOutletTemp.raw, data, 2);
+                MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SECOND_STAGE_HEAT_EXCHANGER_OUTLET_TEMP:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.SecondStageHxOutletTemp.raw, data, 2);
+                MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_FIRST_STAGE_SUCTION_TEMP:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.FirstStageSuctionTemp.raw, data, 2);
+                MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SECOND_STAGE_SUCTION_TEMP:
+                memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.SecondStageSuctionTemp.raw, data, 2);
+                MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
             case SENSOR_SHELF1_TEMP:
                 memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.ShelfTemp.raw, data, 2);
                 MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
-            case SENSOR_SAMPLE1_TEMP:
+
+            case SENSOR_SHELF1_SAMPLE_TEMP:
                 memcpy(MainIOBShadowMemory.TRIAD.ADC_Sensors.SampleTemp.raw, data, 2);
                 MainIOBShadowMemory.TRIAD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
-            /* --- VACUUM TASK SENSORS --- */
+
+            /* --- VACUUM TASK SENSORS (2 bytes per ICD) --- */
             case SENSOR_SYSTEM_VAC:
-                // Note: Vacuum is 4 bytes, not 2 bytes!
-                memcpy(MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SystemVacuum.raw, data, 4);
-                // Note: Updates the VACUUM timestamp, not the ADC timestamp!
+                memcpy(MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SystemVacuum.raw, data, 2);
                 MainIOBShadowMemory.TRIAD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
-            /* --- DIGITAL / GPIO SENSORS --- */
-            case SENSOR_TILT_SW:
-                MainIOBShadowMemory.TRIAD.Digital_Sensors.TiltSwitch = data[0];
+
+            case SENSOR_SAMPLE_VAC1:
+            case SENSOR_SAMPLE_VAC2:
+            case SENSOR_SAMPLE_VAC3:
+            case SENSOR_SAMPLE_VAC4:
+            case SENSOR_SAMPLE_VAC5:
+            case SENSOR_SAMPLE_VAC6:
+            {
+                uint8_t idx = action - SENSOR_SAMPLE_VAC1;
+                memcpy(MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SampleVacuum[idx].raw, data, 2);
+                MainIOBShadowMemory.TRIAD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+            }
+
+            case SENSOR_VACUUM_END_POINT_ADDON1:
+            case SENSOR_VACUUM_END_POINT_ADDON2:
+            {
+                uint8_t idx = action - SENSOR_VACUUM_END_POINT_ADDON1;
+                memcpy(MainIOBShadowMemory.TRIAD.Vacuum_Sensors.EndPointAddonVacuum[idx].raw, data, 2);
+                MainIOBShadowMemory.TRIAD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+            }
+
+            case SENSOR_HARDWARE_DETECTION_IOB:
+                memcpy(&MainIOBShadowMemory.TRIAD.Digital_Sensors.HardwareDetect, data, sizeof(fd_hw_detect_iob_payload_t));
                 MainIOBShadowMemory.TRIAD.Digital_Sensors.Last_Update_ms = k_uptime_get_32();
                 break;
+
             default:
                 LOG_WRN("UpdateMainIOBData: Unknown TRIAD action 0x%02X", action);
                 break;
@@ -118,8 +175,87 @@ void UpdateMainIOBData(uint8_t action, const uint8_t *data)
     }
     else if (u8_ProductID == IAM_FD)
     {
-        // update FD sensor info
+        switch (action)
+        {
+            /* --- ADC TASK SENSORS (2 bytes) --- */
+            case SENSOR_COLLECTOR_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.CollectorTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_AMBIENT_TEMPERATURE:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.AmbientTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_FIRST_STAGE_HEAT_EXCHANGER_OUTLET_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.FirstStageHxOutletTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SECOND_STAGE_HEAT_EXCHANGER_OUTLET_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.SecondStageHxOutletTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_FIRST_STAGE_SUCTION_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.FirstStageSuctionTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SECOND_STAGE_SUCTION_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.SecondStageSuctionTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SHELL_FREEZER_TEMP_SENSOR:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.ShellFreezerTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_MINI_CHAMBER_TEMP:
+                memcpy(MainIOBShadowMemory.FD.ADC_Sensors.MiniChamberTemp.raw, data, 2);
+                MainIOBShadowMemory.FD.ADC_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            /* --- VACUUM TASK SENSORS (2 bytes per ICD) --- */
+            case SENSOR_SYSTEM_VAC:
+                memcpy(MainIOBShadowMemory.FD.Vacuum_Sensors.SystemVacuum.raw, data, 2);
+                MainIOBShadowMemory.FD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            case SENSOR_SAMPLE_VAC1:
+            case SENSOR_SAMPLE_VAC2:
+            case SENSOR_SAMPLE_VAC3:
+            case SENSOR_SAMPLE_VAC4:
+            case SENSOR_SAMPLE_VAC5:
+            case SENSOR_SAMPLE_VAC6:
+            {
+                uint8_t idx = action - SENSOR_SAMPLE_VAC1;
+                memcpy(MainIOBShadowMemory.FD.Vacuum_Sensors.SampleVacuum[idx].raw, data, 2);
+                MainIOBShadowMemory.FD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+            }
+
+            case SENSOR_VACUUM_END_POINT_ADDON1:
+            case SENSOR_VACUUM_END_POINT_ADDON2:
+            {
+                uint8_t idx = action - SENSOR_VACUUM_END_POINT_ADDON1;
+                memcpy(MainIOBShadowMemory.FD.Vacuum_Sensors.EndPointAddonVacuum[idx].raw, data, 2);
+                MainIOBShadowMemory.FD.Vacuum_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+            }
+
+            case SENSOR_HARDWARE_DETECTION_IOB:
+                memcpy(&MainIOBShadowMemory.FD.Digital_Sensors.HardwareDetect, data, sizeof(fd_hw_detect_iob_payload_t));
+                MainIOBShadowMemory.FD.Digital_Sensors.Last_Update_ms = k_uptime_get_32();
+                break;
+
+            default:
+                LOG_WRN("UpdateMainIOBData: Unknown FD action 0x%02X", action);
+                break;
+        }
     }
-    // 2. We are done writing. Unlock the Mutex so other tasks can read/write.
+
     k_mutex_unlock(&shadow_memory_mutex);
 }

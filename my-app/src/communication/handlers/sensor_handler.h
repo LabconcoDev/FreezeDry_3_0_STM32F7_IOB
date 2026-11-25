@@ -5,9 +5,12 @@
 #include "serializer.h"
 #include "product_type.h"
 #include "protocol_defs.h"
+#include "parser.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <zephyr/zbus/zbus.h>
+#include "DataStorage/zbus_channels.h"
 
-void fd_sensor_handler_process(uint8_t cls, uint8_t action, const uint8_t *data, size_t data_len);
+void fd_sensor_handler_process(fd_interface_t source_if, uint8_t cls, uint8_t action, const uint8_t *data, size_t data_len);
 void PushSensorData(uint8_t action);
 #endif /* SENSOR_HANDLER_H */

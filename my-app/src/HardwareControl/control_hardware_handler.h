@@ -16,7 +16,7 @@
  *        Should be called once during system boot in main.c or task_manager.
  */
 void fd_control_hardware_init(void);
-
+int  ControlHardware_Handler(uint8_t action, const uint8_t *data);
 /**
  * @brief Executes a physical hardware change based on the requested action.
  * 

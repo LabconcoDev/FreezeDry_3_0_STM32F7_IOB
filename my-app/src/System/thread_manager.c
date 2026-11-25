@@ -1,13 +1,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include "task_manager.h"
-#include "task_ads124s08.h"
-#include "task_telemetry.h"
-#include "task_dma_uart_display.h"
-#include "task_control.h" 
-#include "task_sensor.h"
+#include "thread_manager.h"
+#include "ads124s08.h"
+#include "thread_telemetry.h"
+#include "thread_dma_uart_display.h"
+#include "thread_control.h" 
+#include "thread_sensor.h"
 #include <string.h>
-LOG_MODULE_REGISTER(task_manager, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(thread_manager, LOG_LEVEL_INF);
 
 
 #include <zephyr/sys/atomic.h>
@@ -37,6 +37,7 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3);
  * ========================================================= */
 #define TASK_STACK_SIZE_1024 1024
 #define TASK_STACK_SIZE_2048 2048
+#define TASK_STACK_SIZE_4096 4096
 /*
  * K_THREAD_DEFINE creates a Zephyr thread at compile time.
  * Parameters: thread ID, stack size, entry function, 3 arguments,
@@ -47,18 +48,18 @@ static void task_worker_wrapper(void *p1, void *p2, void *p3);
  */
 
 /* 1. Process Control Thread (Cooperative, Priority -1, 100 ms) */
-K_THREAD_DEFINE(control_tid,        TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL, -1, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(control_tid,        TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL, -1, 0, SYS_FOREVER_MS);
 /* 2. Display Comms Threads (Preemptive, Priority 1, Event-Driven) */
-K_THREAD_DEFINE(comm_display_tid,   TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  1, 0, SYS_FOREVER_MS);
-K_THREAD_DEFINE(dma_tx_tid,         TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  1, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(comm_display_tid,   TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  1, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(dma_tx_tid,         TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  1, 0, SYS_FOREVER_MS);
 /* 3. Accessory Comms Thread (Preemptive, Priority 2, Event-Driven) */
-K_THREAD_DEFINE(comm_accessory_tid, TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  2, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(comm_accessory_tid, TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  2, 0, SYS_FOREVER_MS);
 /* 4. All Sensors & Bus Thread (Preemptive, Priority 3, 50 ms) */
-K_THREAD_DEFINE(sensor_tid,         TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  3, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(sensor_tid,         TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  3, 0, SYS_FOREVER_MS);
 /* 5. Safety & Alerts Thread (Preemptive, Priority 4, 100 ms) */
-K_THREAD_DEFINE(alert_monitor_tid,  TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  4, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(alert_monitor_tid,  TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  4, 0, SYS_FOREVER_MS);
 /* 6. System & Telemetry Thread (Preemptive, Priority 5, 20 ms / 1000 ms sim) */
-K_THREAD_DEFINE(system_ui_tid,      TASK_STACK_SIZE_2048, task_worker_wrapper, NULL, NULL, NULL,  5, 0, SYS_FOREVER_MS);
+K_THREAD_DEFINE(system_tid,      TASK_STACK_SIZE_4096, task_worker_wrapper, NULL, NULL, NULL,  5, 0, SYS_FOREVER_MS);
 
 
 /* =========================================================
@@ -115,17 +116,17 @@ static struct app_task task_table[] = {
     },
     {
         .name        = "5_Alert_Monitor",
-        .init        = task2_init,               // Placeholder init
-        .handler     = task2_collector_controller,// Later: alert_monitor_run
-        .interval_ms = 100,                      // 100 ms loop
+        .init        = thread_alerts_init,
+        .handler     = thread_alerts_run,
+        .interval_ms = 0,                      // 100 ms loop or event driven
         .thread_id   = alert_monitor_tid,
     },
     {
-        .name        = "6_System_UI_Telemetry",
+        .name        = "6_System_Telemetry",
         .init        = telemetry_task_init,
         .handler     = telemetry_task_run,       // Streams/pushes Triad telemetry to Display!
-        .interval_ms = 20,                       // 20 ms loop
-        .thread_id   = system_ui_tid,
+        .interval_ms = 0,                       // 20 ms loop
+        .thread_id   = system_tid,
     },
 };
 

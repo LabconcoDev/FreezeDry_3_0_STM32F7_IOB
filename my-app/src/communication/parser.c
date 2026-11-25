@@ -2,6 +2,9 @@
 #include "control_handler.h"
 #include "sensor_handler.h"
 #include "system_handler.h"
+#include "alert_accessory_handler.h"
+#include "settings_handler.h"
+#include "diagnostic_handler.h"
 #include <zephyr/logging/log.h>
 #include "serializer.h"
 
@@ -65,27 +68,32 @@ void fd_parser_process_packet(fd_interface_t source_if, const fd_packet_t *pkt)
     /* ======================================================== */
 
 
-    switch (payload->type) {
+    switch (payload->type)
+    {
         case TYPE_CONTROL:
-            fd_control_handler_process(payload->cls, payload->action, payload->data, data_len);
+            fd_control_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
             break;
-            
 
         case TYPE_SENSORS:
-            fd_sensor_handler_process(payload->cls, payload->action, payload->data, data_len);
+            fd_sensor_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
             break;
+
         case TYPE_ALERT:
-        case TYPE_SYSTEM:
-            fd_system_handler_process(payload->cls, payload->action, payload->data, data_len);
+            fd_alert_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
             break;
-            
+
+        case TYPE_SYSTEM:
+            fd_system_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
+            break;
 
         case TYPE_SETTINGS:
-        case TYPE_DIAGNOSTIC:
-            // TODO: Implement handlers for other types later
-            LOG_INF("Received unhandled type: 0x%02X", payload->type);
+            fd_settings_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
             break;
-            
+
+        case TYPE_DIAGNOSTIC:
+            fd_diagnostic_handler_process(source_if, payload->cls, payload->action, payload->data, data_len);
+            break;
+
         default:
             LOG_WRN("Unknown packet type: 0x%02X", payload->type);
             break;

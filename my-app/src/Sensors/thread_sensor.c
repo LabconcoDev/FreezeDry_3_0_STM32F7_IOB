@@ -1,16 +1,19 @@
 #include "build_config.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include "task_sensor.h"
-#include "task_ads124s08.h"
+#include "thread_sensor.h"
+#include "ads124s08.h"
 #include "boot_sequence.h"
 #include "product_type.h"
 #include "main_iob_data.h"
 #include "protocol_defs.h"
 #include "sensor_types.h"
 
-LOG_MODULE_REGISTER(task_sensor, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(thread_sensor, LOG_LEVEL_INF);
 
+
+
+extern struct k_mutex shadow_memory_mutex;
 /* =========================================================
  * 1. EVERY 50 ms: VACUUM SENSORS (I2C Bus)
  * ========================================================= */
@@ -54,27 +57,30 @@ static void vacuum_sensors_50ms_run(void)
 static void digital_sensors_100ms_run(void)
 {
 #ifdef SIMULATION
-    if (u8_ProductID == IAM_TRIAD) 
+    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+    if (u8_ProductID == IAM_TRIAD)
     {
         /* Simulate Platen Tilt Switch = OPEN (0 = Level / Safe) */
         uint8_t sim_tilt = SWITCH_OPEN;
-        UpdateMainIOBData(SENSOR_TILT_SW, &sim_tilt);
+        MainIOBShadowMemory.TRIAD.Digital_Sensors.TiltSwitch = sim_tilt;
+        MainIOBShadowMemory.TRIAD.Digital_Sensors.Last_Update_ms = k_uptime_get_32();
         LOG_INF("[SIM] TRIAD TILT SWITCH: %s (%u)",
-        sim_tilt == SWITCH_OPEN ? "OPEN" : "CLOSED",
-        sim_tilt);
-    } 
-    else if (u8_ProductID == IAM_FD) 
+                sim_tilt == SWITCH_OPEN ? "OPEN" : "CLOSED",
+                sim_tilt);
+    }
+    else if (u8_ProductID == IAM_FD)
     {
         /* Simulate Collector Moisture = NO MOISTURE (0 = Dry) */
         uint8_t sim_moisture = MOISTURE_NO;
-        UpdateMainIOBData(SENSOR_MOISTURE, &sim_moisture);
+        MainIOBShadowMemory.FD.Digital_Sensors.Moisture = sim_moisture;
+        MainIOBShadowMemory.FD.Digital_Sensors.Last_Update_ms = k_uptime_get_32();
         LOG_INF("[SIM] FD MOISTURE: %s (%u)",
-        sim_moisture == MOISTURE_NO ? "DRY" : "WET",
-        sim_moisture);
+                sim_moisture == MOISTURE_NO ? "DRY" : "WET",
+                sim_moisture);
     }
+    k_mutex_unlock(&shadow_memory_mutex);
 #else
-    /* TODO: Read physical Tilt Switch GPIO, Moisture GPIO & AC Zero-Cross */
-    // No AC ZCD in FD 3.0
+    /* TODO: Read physical Tilt Switch GPIO & Moisture GPIO */
 #endif
 }
 

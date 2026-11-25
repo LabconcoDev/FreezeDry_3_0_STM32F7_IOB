@@ -1,7 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include "boot_sequence.h"
-#include "task_manager.h"
+#include "thread_manager.h"
 
 LOG_MODULE_REGISTER(main_app, LOG_LEVEL_INF);
 
