@@ -79,3 +79,19 @@ ZBUS_CHAN_DEFINE(ZBUS_CHAN_ACCESSORY_CONTROL_STATUS,
         .valid                  = false
     )
 );
+
+/* Main IOB Vacuum Sensors */
+ZBUS_CHAN_DEFINE(ZBUS_CHAN_SYSTEM_VACUUM,
+    struct sys_vac_msg,
+    NULL,
+    NULL,
+    ZBUS_OBSERVERS_EMPTY,
+    ZBUS_MSG_INIT(
+        .system_vac_mbar      = 0xFFFF,
+        .sample_vac_mbar      = { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
+        .epd_addon_vac_1_mbar = 0xFFFF,
+        .epd_addon_vac_2_mbar = 0xFFFF,
+        .timestamp_ms         = 0,
+        .valid                = false
+    )
+);

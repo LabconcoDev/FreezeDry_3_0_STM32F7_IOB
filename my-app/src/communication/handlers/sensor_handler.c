@@ -221,57 +221,56 @@ static void push_temp_sensor(uint8_t action)
 static void push_vac_sensor(uint8_t action)
 {
     /* 2 bytes (uint16_t, mbar * 1000, LSB first) per ICD */
+    uint16_t val = 0xFFFF;
     uint8_t out_data[2] = { 0xFF, 0xFF };
-    const uint8_t *raw = NULL;
-    uint32_t ts = 0;
-
-    k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
 
     if (action == SENSOR_STOPPERING_TRAY_VACUUM)
     {
-        ts  = AccessoryShadowMemory.Last_Update_ms;
-        raw = AccessoryShadowMemory.DryerVacuum.raw;
+        k_mutex_lock(&shadow_memory_mutex, K_FOREVER);
+        if ((k_uptime_get_32() - AccessoryShadowMemory.Last_Update_ms) < 5000)
+        {
+            memcpy(out_data, AccessoryShadowMemory.DryerVacuum.raw, 2);
+        }
+        k_mutex_unlock(&shadow_memory_mutex);
+        push_sensor_data(action, out_data, 2);
+        return;
     }
-    else if (u8_ProductID == IAM_TRIAD)
+
+    struct sys_vac_msg vac_msg;
+    if (zbus_chan_read(&ZBUS_CHAN_SYSTEM_VACUUM, &vac_msg, K_MSEC(5)) == 0 &&
+        vac_msg.valid &&
+        (k_uptime_get_32() - vac_msg.timestamp_ms) < 5000)
     {
-        ts = MainIOBShadowMemory.TRIAD.Vacuum_Sensors.Last_Update_ms;
-        if (action == SENSOR_SYSTEM_VAC)
+        switch (action)
         {
-            raw = MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SystemVacuum.raw;
-        }
-        else if (action >= SENSOR_SAMPLE_VAC1 && action <= SENSOR_SAMPLE_VAC6)
-        {
-            raw = MainIOBShadowMemory.TRIAD.Vacuum_Sensors.SampleVacuum[action - SENSOR_SAMPLE_VAC1].raw;
-        }
-        else if (action == SENSOR_VACUUM_END_POINT_ADDON1 || action == SENSOR_VACUUM_END_POINT_ADDON2)
-        {
-            raw = MainIOBShadowMemory.TRIAD.Vacuum_Sensors.EndPointAddonVacuum[action - SENSOR_VACUUM_END_POINT_ADDON1].raw;
-        }
-    }
-    else if (u8_ProductID == IAM_FD)
-    {
-        ts = MainIOBShadowMemory.FD.Vacuum_Sensors.Last_Update_ms;
-        if (action == SENSOR_SYSTEM_VAC)
-        {
-            raw = MainIOBShadowMemory.FD.Vacuum_Sensors.SystemVacuum.raw;
-        }
-        else if (action >= SENSOR_SAMPLE_VAC1 && action <= SENSOR_SAMPLE_VAC6)
-        {
-            raw = MainIOBShadowMemory.FD.Vacuum_Sensors.SampleVacuum[action - SENSOR_SAMPLE_VAC1].raw;
-        }
-        else if (action == SENSOR_VACUUM_END_POINT_ADDON1 || action == SENSOR_VACUUM_END_POINT_ADDON2)
-        {
-            raw = MainIOBShadowMemory.FD.Vacuum_Sensors.EndPointAddonVacuum[action - SENSOR_VACUUM_END_POINT_ADDON1].raw;
+            case SENSOR_SYSTEM_VAC:
+                val = vac_msg.system_vac_mbar;
+                break;
+
+            case SENSOR_SAMPLE_VAC1:
+            case SENSOR_SAMPLE_VAC2:
+            case SENSOR_SAMPLE_VAC3:
+            case SENSOR_SAMPLE_VAC4:
+            case SENSOR_SAMPLE_VAC5:
+            case SENSOR_SAMPLE_VAC6:
+                val = vac_msg.sample_vac_mbar[action - SENSOR_SAMPLE_VAC1];
+                break;
+
+            case SENSOR_VACUUM_END_POINT_ADDON1:
+                val = vac_msg.epd_addon_vac_1_mbar;
+                break;
+
+            case SENSOR_VACUUM_END_POINT_ADDON2:
+                val = vac_msg.epd_addon_vac_2_mbar;
+                break;
+
+            default:
+                break;
         }
     }
 
-    if (raw != NULL && (k_uptime_get_32() - ts) < 5000)
-    {
-        memcpy(out_data, raw, 2);
-    }
-
-    k_mutex_unlock(&shadow_memory_mutex);
-
+    out_data[0] = (uint8_t)(val & 0xFF);
+    out_data[1] = (uint8_t)((val >> 8) & 0xFF);
     push_sensor_data(action, out_data, 2);
 }
 

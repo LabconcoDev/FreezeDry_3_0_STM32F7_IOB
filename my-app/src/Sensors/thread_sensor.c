@@ -8,6 +8,7 @@
 #include "main_iob_data.h"
 #include "protocol_defs.h"
 #include "sensor_types.h"
+#include "zbus_channels.h"
 
 LOG_MODULE_REGISTER(thread_sensor, LOG_LEVEL_INF);
 
@@ -19,37 +20,36 @@ extern struct k_mutex shadow_memory_mutex;
  * ========================================================= */
 static void vacuum_sensors_50ms_run(void)
 {
+    struct sys_vac_msg vac_msg =
+    {
+        .system_vac_mbar    = 0xFFFF,
+        .sample_vac_mbar    = { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF },
+        .epd_addon_vac_1_mbar = 0xFFFF,
+        .epd_addon_vac_2_mbar = 0xFFFF,
+        .timestamp_ms       = k_uptime_get_32(),
+        .valid              = false,
+    };
+
 #ifdef SIMULATION
+    static uint16_t sim_vac_mbar = 1000;
+    sim_vac_mbar = (sim_vac_mbar <= 100) ? 1000 : (uint16_t)(sim_vac_mbar - 5);
 
-    // This simulation to be done only when APP do a set pont. otherwise environment vac point to be present
-    /* Simulate System Vacuum ramping down from 1000 mBar to 100 mBar */
-    static int16_t sim_vac_mtorr = 1000;
-    sim_vac_mtorr -= 5;
-    if (sim_vac_mtorr < 100) {
-        sim_vac_mtorr = 1000;
+    vac_msg.system_vac_mbar = sim_vac_mbar;
+    for (int i = 0; i < 6; i++)
+    {
+        vac_msg.sample_vac_mbar[i] = (uint16_t)(sim_vac_mbar + (i * 10));
     }
+    vac_msg.epd_addon_vac_1_mbar = sim_vac_mbar;
+    vac_msg.epd_addon_vac_2_mbar = (uint16_t)(sim_vac_mbar + 5);
+    vac_msg.valid = true;
 
-    VacuumStatus_t vac_pkt;
-    vac_pkt.state.vacuum   = sim_vac_mtorr;
-    vac_pkt.state.status   = 0x01; /* Sensor Present & OK */
-    vac_pkt.state.reserved = 0x00;
-
-    UpdateMainIOBData(SENSOR_SYSTEM_VAC, vac_pkt.raw);
-    LOG_INF("[SIM] SYSTEM VACUUM: %d mBar | Status: 0x%02X",
-        sim_vac_mtorr,
-        vac_pkt.state.status);
-    
-
+    zbus_chan_pub(&ZBUS_CHAN_SYSTEM_VACUUM, &vac_msg, K_MSEC(5));
 #else
     /* TODO: Read physical I2C Vacuum Sensor MUX & Transducers (50 ms) */
-
-
+    (void)vac_msg;
 #endif
-
-
-
-
 }
+
 
 /* =========================================================
  * 2. EVERY 100 ms: DIGITAL SENSORS (Tilt Switch, Moisture, ZCD)

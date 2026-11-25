@@ -123,6 +123,7 @@ void fd_control_handler_process(fd_interface_t source_if, uint8_t cls, uint8_t a
     /* Forward Accessory PUSH messages (e.g. CONTROL_PROGRAM_STATUS) up to APP */
     if (source_if == INTERFACE_ACCESSORY_IOB && cls == CLASS_PUSH)
     {
+        update_accy_control_zbus(action, data, data_len);
         forward_to_app(CLASS_PUSH, action, data, data_len);
         return;
     }

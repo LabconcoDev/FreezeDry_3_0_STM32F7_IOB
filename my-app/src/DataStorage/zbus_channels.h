@@ -119,6 +119,20 @@ struct accy_control_status_msg
 };
 
 
+// system vacuum 
+struct sys_vac_msg
+{
+    uint16_t system_vac_mbar;      /* 0x14: System Vacuum (mbar * 1000) */
+    uint16_t sample_vac_mbar[6];   /* 0x15-0x1A: Sample Vacuum 1-6 */
+    uint16_t epd_addon_vac_1_mbar; /* 0x1C: Vacuum End Point Add-on 1 */
+    uint16_t epd_addon_vac_2_mbar; /* 0x1D: Vacuum End Point Add-on 2 */
+    uint32_t timestamp_ms;
+    bool     valid;
+};
+
+ZBUS_CHAN_DECLARE(ZBUS_CHAN_SYSTEM_VACUUM);
+
+
 // System or main IOB Temperature
 ZBUS_CHAN_DECLARE(ZBUS_CHAN_SYSTEM_TEMPERATURE);
 
